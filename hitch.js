@@ -1,43 +1,10 @@
 /**
+ * Hitch.js - v0.0.1
+ * Lightweight backbone based single page application framework
  *
- * Hitch - Backbone based single page application framework
- * --------------------------------------------------------
- *
- *
- * Packages:
- *
- * - Hitch.ACL                    # provides access control lists
- *    - setPublicReadAccess       # sets public (e.g. all users) read access rights
- *    - getPublicReadAccess       # gets the public (e.g. all users) read access rights
- *    - setPublicWriteAccess      # sets public (e.g. all users) write access rights
- *    - getPublicWriteAccess      # gets the public (e.g. all users) write access rights
- *    - setReadAccess             # sets read access rights for the given userId
- *    - getReadAccess             # gets the read access rights for the given userId
- *    - setWriteAccess            # sets write access rights for the given userId
- *    - getWriteAccess            # gets the write access rights for the given userId
- *    - setRoleReadAccess         # sets write access rights for given role
- *    - getRoleReadAccess         # gets write access rights for given role
- *    - setRoleWriteAccess        # sets read access rights for given role
- *    - getRoleWriteAccess        # gets read access rights for given role
- *    - toJSON                    # returns json structure representing this acl
- *
- * - Hitch.App                    # provides generic basics for setting up a single page app
- *    - setCurrentUser
- *    - getCurrentUser
- *    - addAsset
- *    - getName
- *    - setName
- *    - loadModule
- *    - enableModule
- *    - disableModule
- *
- * - Hitch.Asset                  # represents an asset (css,text,images)
- * - Hitch.Model                  # hitch model
- * - Hitch.Resource               # the backbone.collection in fact ;>
- * - Hitch.Role                   # provides acl role definitions
- * - Hitch.Router                 # provides routing
- * - Hitch.User                   # provides a basic user model
- * - Hitch.View                   # extended backbone.view
+ * @author: Philipp Boes <mostgreedy@gmail.com>
+ * @copyright: (c) 2012 Philipp Boes
+ * @version: 0.0.1
  *
  */
 (function() {
