@@ -6,7 +6,7 @@ Lightweight backbone-based single page application framework.
 
 ### Packages
 
-* Hitch.ACL
+* [Hitch.ACL][#Hitch.ACL]
 * Hitch.App
 * Hitch.Asset
 * Hitch.Model
@@ -15,3 +15,6 @@ Lightweight backbone-based single page application framework.
 * Hitch.Router
 * Hitch.User
 * Hitch.View
+
+
+#### Hitch.ACL
