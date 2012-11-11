@@ -4,6 +4,7 @@ Hitch
 Lightweight backbone-based single page application framework.
 
 * Default [Hitch.Object](#hitchobject)`s for [users](#hitchuser), [credentials](#hitchcredentials) and [roles](#hitchrole)
+* Use [Hitch.Asset](#hitchasset)`s to provide third party resources, external libs and stylesheets.
 * Full featured [Access Control Layer](#hitchacl) for controlling access to Hitch.Object`s
 * Auto-generate your application bootstrap files using the command-line tool
 * Module based app structure based on the amd module pattern
