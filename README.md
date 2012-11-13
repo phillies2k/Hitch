@@ -9,6 +9,7 @@ Lightweight backbone-based single page application framework.
 * Auto-generate your application bootstrap files using the command-line tool
 * Module based app structure based on the amd module pattern
 * Reduces glue code to a minimum
+* Generic view data binding using HTML data-attributes
 
 ===
 
@@ -22,6 +23,20 @@ Lightweight backbone-based single page application framework.
 ## Installation
 ## Setup
 ## Configuration
+## Extensions
+
+Currently there are two basic extensions that come with Hitch. These serve several stand-alone mechanisms Hitch uses to
+get done with its work and also developers can use to ease up their life.
+
+### Hitch.Cookies
+
+Provides a CRUD-like interface for cookie access.
+
+### Hitch.Helpers
+
+Provides several helper methods that will be mixed in into underscore for being available within the rendering context
+of your views.
+
 ## Packages
 
 * [Hitch.ACL](#hitchacl)
