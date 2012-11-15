@@ -1,10 +1,10 @@
 /**
- * Hitch.js - v0.0.1
+ * Hitch.js - v0.0.2
  * Lightweight backbone based single page application framework
  *
  * @author: Philipp Boes <mostgreedy@gmail.com>
  * @copyright: (c) 2012 Philipp Boes
- * @version: 0.0.1
+ * @version: 0.0.2
  *
  */
 (function() {
@@ -12,25 +12,20 @@
   var root = this
     , Backbone = root.Backbone
     , _ = root._
-    , Hitch = root.Hitch = {}
-    , extend = Backbone.Router.extend;
+    , ObjectId = root.ObjectId
+    , Hitch = root.Hitch = {};
 
-  if (!_) throw new Error("Hitch requires underscore.js to work.");
-  if (!Backbone) throw new Error("Hitch requires backbone.js to work.");
+  if (!_) throw new Error("Hitch requires underscore.");
+  if (!Backbone) throw new Error("Hitch requires backbone.");
+  if (!ObjectId) throw new Error("Hitch requires ObjectId.");
 
-  Hitch.VERSION = '0.0.1';
+  Hitch.VERSION = '0.0.2';
 
-
-  /**
-   * Hitch.ACL
-   * @param permissions
-   * @constructor
-   */
   Hitch.ACL = function(permissions) {
 
     this.permissions = {};
 
-    if (permissions instanceof Hitch.User) {
+    if (permissions instanceof Hitch.Object || permissions instanceof Hitch.Resource) {
 
       this.setReadAccess(permissions, true);
       this.setWriteAccess(permissions, true);
@@ -50,37 +45,44 @@
     }
   };
 
-  Hitch.ACL.PUBLIC = 1337;
-  Hitch.ACL.extend = extend;
+  Hitch.ACL.PUBLIC = 'PUBLIC';
 
   Hitch.ACL.prototype = {
 
     constructor: Hitch.ACL,
 
+    _determineUserId: function(userId) {
+      if (userId instanceof Hitch.User) {
+        return userId.id;
+      } else if (userId instanceof Hitch.Role) {
+        return 'role:' + userId.getName();
+      } else if (userId instanceof Hitch.Resource) {
+        return 'resource:' + userId.name;
+      } else if (_.isObject(userId)) {
+        return userId.toString();
+      } else {
+        return userId;
+      }
+    },
+
     _getAccess: function(accessType, userId) {
+
       var permissions;
 
-      if (userId instanceof Hitch.User) {
-        userId = userId.id;
-      } else if (userId instanceof Hitch.Role) {
-        userId = 'role:' + userId.getName();
-      }
-
+      userId = this._determineUserId(userId);
       permissions = this.permissions[userId];
+
       return permissions && permissions[accessType];
 
     },
 
     _setAccess: function(accessType, userId, allowed) {
+
       var permissions;
 
-      if (userId instanceof Hitch.User) {
-        userId = userId.id;
-      } else if (userId instanceof Hitch.Role) {
-        userId = 'role:' + userId.getName();
-      }
-
+      userId = this._determineUserId(userId);
       permissions = this.permissions[userId];
+
       if (!permissions) {
         if (!allowed) return;
         permissions = {};
@@ -151,75 +153,25 @@
 
   };
 
+  Hitch.Object = Backbone.Model.extend({
 
-
-  /**
-   * Hitch.Asset
-   * @param type
-   * @param source
-   * @param autoload
-   * @constructor
-   */
-  Hitch.Asset = function(type, source, autoload) {
-  };
-
-
-
-  /**
-   * Hitch.Error
-   * @param msg
-   * @constructor
-   */
-  Hitch.Error = function(msg) {
-    this.message = msg;
-  };
-
-  Hitch.Error.extend = extend;
-
-  _.extend(Hitch.Error.prototype, Error.prototype, {
-    constructor: Hitch.Error,
-    name: 'HitchError'
-  });
-
-
-
-  /**
-   * Hitch.Model
-   * @param attributes
-   * @param options
-   * @constructor
-   */
-  Hitch.Model = function(attributes, options) {
-
-    if (options && options.acl) {
-      this.setACL(options.acl);
-      delete options.acl;
-    }
-
-    Backbone.Model.prototype.constructor.apply(this, arguments);
-  };
-
-  Hitch.Model.extend = extend;
-
-  _.extend(Hitch.Model.prototype, Backbone.Model.prototype, {
-
-    constructor: Hitch.Model,
+    idAttribute: '_id',
 
     isStoredLocally: false,
 
     storageKey: null,
 
-    setACL: function(acl) {
+    acl: null,
 
-      if (!acl instanceof Hitch.ACL) {
-        throw new Hitch.Error('Invalid ACL given.');
-      }
-
-      this.acl = acl;
-    },
+    relations: {},
 
     getACL: function() {
-      return this.acl;
+
+      if (!this.acl) {
+        this.acl = new Hitch.ACL(this);
+      }
+
+      return this.acl
     },
 
     set: function(attrs, options) {
@@ -229,7 +181,11 @@
         var related = this[name];
 
         if (!related) {
-          related = this[name] = _.isObject(constructor) ? constructor : new constructor();
+          if (attrs[name] && (attrs[name] instanceof Backbone.Model || attrs[name] instanceof Backbone.Collection)) {
+            related = this[name] = attrs[name];
+          } else {
+            related = this[name] = new constructor();
+          }
         }
 
         if (attrs[name]) {
@@ -247,6 +203,10 @@
       return Backbone.Model.prototype.set.call(this, attrs, options);
     },
 
+    sync: function(method, model, options) {
+      return Hitch.sync.call(this, method, model, options);
+    },
+
     toJSON: function() {
 
       var attributes = _.clone(this.attributes);
@@ -260,128 +220,246 @@
 
   });
 
+  Hitch.Role = Hitch.Object.extend({
 
-
-  /**
-   * Hitch.Resource
-   * @param models
-   * @param options
-   * @constructor
-   */
-  Hitch.Resource = function(models, options) {
-    Backbone.Collection.prototype.constructor.call(this, models, options);
-  };
-
-  Hitch.Resource.extend = extend;
-
-  _.extend(Hitch.Resource.prototype, Backbone.Collection.prototype, {
-
-    constructor: Hitch.Resource,
-
-    loaded: false,
-
-    fetch: function(options) {
-      var success = options.success;
-      options.success = _.bind(function(response) {
-        if (success) success(response);
-        this.loaded = true;
-      }, this);
-    }
-
-  });
-
-
-
-  /**
-   * Hitch.Role
-   * @param name
-   * @param acl
-   * @constructor
-   */
-  Hitch.Role = function(name, acl) {
-    Hitch.Model.prototype.constructor.call(this, { name: name }, { acl: acl });
-  };
-
-  Hitch.Role.extend = extend;
-
-  _.extend(Hitch.Role.prototype, Hitch.Model.prototype, {
-
-    constructor: Hitch.Role,
+    defaults: {
+      name: 'anonymous'
+    },
 
     getName: function() {
       return this.get('name');
     },
 
     setName: function(name, options) {
-      return this.set({ name: name }, options);
+      return this.set('name', name, options);
     }
 
   });
 
+  Hitch.User = Hitch.Object.extend({
 
+    loggedIn: false,
 
-  /**
-   * Hitch.Router
-   * @param options
-   * @constructor
-   */
-  Hitch.Router = function(options) {
-    Backbone.Router.prototype.constructor.call(this, options);
+    relations: {
+      role: Hitch.Role
+    },
+
+    isLoggedIn: function() {
+      return this.loggedIn;
+    }
+
+  });
+
+  Hitch.Credentials = Hitch.Object.extend({
+
+    userAttribute: 'username',
+
+    passAttribute: 'password',
+
+    validate: function(attributes) {
+
+      if (!attributes[this.userAttribute]) {
+        return "no " + this.userAttribute + " given.";
+      }
+
+      if (!attributes[this.passAttribute]) {
+        return "no " + this.passAttribute + " given."
+      }
+
+    },
+
+    initialize: function(attrs, options) {
+
+      options = options || {};
+
+      if (options.user && options.user instanceof Hitch.User) {
+        this.user = options.user;
+      } else {
+        this.user = new Hitch.User();
+      }
+
+      if (options.url) {
+        this.url = options.url;
+      }
+    },
+
+    fetch: function(options) {
+
+      var success
+        , error;
+
+      options = options || {};
+
+      if (options.success) success = options.success;
+      if (options.error) error = options.error;
+
+      options.data = this.toJSON();
+      options.type = 'POST';
+
+      options.success = _.bind(function(response) {
+        this.user.loggedIn = true;
+        this.user.set(response);
+        Hitch.Cookies.set('hitch-user', this.user.id);
+        if (success) success(this, response);
+      }, this);
+
+      options.error = _.bind(function(err) {
+        Hitch.Cookies.clear('hitch-user');
+        this.user.loggedIn = false;
+        this.user.clear({ silent: true });
+        if (error) error(this, err);
+      }, this);
+
+      return Hitch.Object.prototype.fetch.call(this, options);
+    }
+
+  });
+
+  var ops = '$eq $in $or $gt $gte $lt $lte'.split(' ')
+    , cmd = '=== $in || > >= < <='.split(' ');
+
+  function evaluateCriteria(attr, value, op) {
+
+    var pos = ops.indexOf(attr);
+    op = op || '$eq';
+
+    if (pos >= 0) {
+
+      op = cmd[pos];
+
+      if (!_.isObject(value)) {
+        throw new Error("invalid hash format for ".attr);
+      }
+
+      for (var key in value) {
+        if (!evaluateCriteria(key, value[key], attr)) {
+          return false;
+        }
+      }
+
+    }
+
+    switch (op) {
+      case '$eq':
+        return this.get(attr) === value;
+      case '$in':
+        return this.get(attr).indexOf(value) >= 0;
+      case '$gt':
+        return this.get(attr) > value;
+      case '$gte':
+        return this.get(attr) >= value;
+      case '$lt':
+        return this.get(attr) < value;
+      case '$lte':
+        return this.get(attr) <= value;
+      case '$or':
+        return this.get(attr) || value;
+    }
   }
 
-  Hitch.Router.extend = extend;
+  Hitch.Resource = Backbone.Collection.extend({
+
+    operators: '$eq $in $or $gt $gte $lt $lte'.split(' '),
+
+    model: Hitch.Object,
+
+    getACL: Hitch.Object.prototype.getACL,
+
+    setACL: Hitch.Object.prototype.setACL,
+
+    find: function(attrs, options) {
+
+      var results;
+
+      if (_.isEmpty(attrs)) return this.models;
+
+      results = this.filter(function(model) {
+        for (var key in attrs) {
+          if (!this._evaluateCriteria(model, key, attrs[key])) {
+            return false;
+          }
+        }
+        return true;
+      }, this);
+
+      return options.limit ? _.first(results, options.limit) : results;
+    },
+
+    findOne: function(criteria) {
+      if (!_.isPlainObject(criteria)) return;
+      return this.find(criteria, { limit: 1 });
+    },
+
+    _evaluateCriteria: function(model, attr, value, operator) {
+
+      function returnVal(statement, op, condition) {
+        switch (op) {
+          case '$eq':
+            return statement === condition;
+          case '$in':
+            return statement.indexOf(condition) >= 0;
+          case '$or':
+            return statement || condition;
+          case '$gt':
+            return statement > condition;
+          case '$gte':
+            return statement >= condition;
+          case '$lt':
+            return statement < condition;
+          case '$lte':
+            return statement <= condition;
+          default:
+            return statement == condition;
+        }
+      }
+
+      if (this.operators.indexOf(attr) === -1) {
+        return returnVal(model.get(attr), operator, value);
+      } else if (_.isObject(value)) {
+        for (var p in value) {
+          if (!this._evaluateCriteria(model, p, value[p], attr)) {
+            return false;
+          }
+        }
+        return true;
+      }
+    }
+
+  });
+
+  Hitch.Router = function(options) {
+
+    options = options || {};
+
+    if (options.resource) this.resource = options.resource;
+    if (options.routes) this.routes = options.routes;
+
+    this._bindFilters();
+    this._bindRoutes();
+
+    this.initialize.apply(this, arguments);
+  };
+
+  Hitch.Router.extend = Backbone.Router.extend;
 
   _.extend(Hitch.Router.prototype, Backbone.Router.prototype, {
 
     constructor: Hitch.Router,
 
-    displaySlots: {},
+    before: {},
+
+    after: {},
+
+    _displaySlots: {},
 
     _filters: {},
 
-    showView: function(selector, view) {
-
-      if (this.displaySlots[selector]) {
-        this.displaySlots[selector].close();
-      }
-
-      $(selector).html(view.render().el);
-      this.displaySlots[selector] = view;
-      return view;
-
-    },
-
-    addBeforeFilter: function(route, filter, context) {
-      this._addFilter.apply(this, ['before'].concat(_.toArray(arguments)));
-    },
-
-    addAfterFilter: function(route, filter, context) {
+    onAfter: function(route, filter, context) {
       this._addFilter.apply(this, ['after'].concat(_.toArray(arguments)));
     },
 
-    _addFilter: function(type, route, filter, context) {
-      if (!this._filters[type]) this._filters[type] = {};
-      if (!_.isRegExp(route)) route = new RegExp(route);
-      this._filters[type][route] = _.bind(filter, context || this);
-    },
-
-    _applyFilters: function(type, fragment, args) {
-
-      var filters;
-
-      if (!this._filters[type] || _.isEmpty(this._filters[type])) {
-        return true;
-      }
-
-      filters = _.filter(this._filters[type], function(fn, route) {
-        if (!_.isRegExp(route)) route = new RegExp(route);
-        return route.test(fragment);
-      });
-
-      return _.isEmpty(filters) || !_.find(filters, function(fn, route) {
-        var result = _.isFunction(fn) ? fn.apply(this, args) : this[fn].apply(this, args);
-        return _.isBoolean(result) && result === false;
-      }, this);
+    onBefore: function(route, filter, context) {
+      this._addFilter.apply(this, ['before'].concat(_.toArray(arguments)));
     },
 
     route: function(route, name, callback) {
@@ -394,74 +472,115 @@
         callback = this[name];
       }
 
-      Backbone.history = Backbone.history || new Backbone.History();
-
       Backbone.history.route(route, _.bind(function(fragment) {
 
         var args = this._extractParameters(route, fragment);
 
         if (this._applyFilters('before', fragment, args)) {
 
-          try {
+          callback && callback.apply(this, args);
 
-            callback && callback.apply(this, args);
+          this._applyFilters('after', fragment, args);
 
-            this._applyFilters('after', fragment, args);
-
-            this.trigger.apply(this, ['route:' + name].concat(args));
-            Backbone.history.trigger('route', this, name, args);
-
-          } catch (err) {
-            if (err instanceof Hitch.Error) {
-              this.trigger.apply(this, ['error', err]);
-            } else {
-              throw err;
-            }
-          }
+          this.trigger.apply(this, ['route:' + name].concat(args));
+          Backbone.history.trigger('route', this, name, args);
 
         }
 
 
       }, this));
       return this;
+    },
+
+    showView: function(selector, view) {
+
+      if (this._displaySlots[selector]) {
+        this._displaySlots[selector].close();
+      }
+
+      $(selector).html(view.render().el);
+      view.open();
+
+      this._displaySlots[selector] = view;
+      return view;
+
+    },
+
+    _addFilter: function(type, route, filter, context) {
+      var routeFilters;
+      if (!this._filters[type]) this._filters[type] = {};
+      if (!this._filters[type][route]) routeFilters = this._filters[type][route] = [];
+      routeFilters[routeFilters.length] = _.bind(filter, context || this);
+    },
+
+    _applyFilters: function(type, fragment, args) {
+
+      var filters, ret;
+
+      if (!this._filters[type] || _.isEmpty(this._filters[type])) {
+        return true;
+      }
+
+      filters = _.filter(this._filters[type], function(fn, route) {
+        if (!_.isRegExp(route)) route = this._routeToRegExp(route);
+        return route.test(fragment);
+      }, this);
+
+      ret = _.isEmpty(filters) || !_.find(filters, function(handlers, route) {
+        var ret = [];
+        _.each(handlers, function(fn) {
+          var result = _.isFunction(fn) ? fn.apply(this, args) : this[fn].apply(this, args);
+          ret.push(_.isBoolean(result) && result === false);
+        }, this);
+        return _.compact(ret).length === 0;
+      }, this);
+
+      if (type === 'before' && _.isFunction(this.beforeAll)) {
+        ret = ret && this.beforeAll();
+      }
+
+      if (type === 'after' && _.isFunction(this.afterAll)) {
+        ret = ret && this.afterAll();
+      }
+
+      return ret;
+    },
+
+    _bindFilters: function() {
+      for (var a in this.after) this._addFilter('after', a, this.after[a]);
+      for (var b in this.before) this._addFilter('before', b, this.before[b]);
     }
 
   });
 
-
-
-  /**
-   * Hitch.User
-   * @param attributes
-   * @param options
-   * @constructor
-   */
-  Hitch.User = function(attributes, options) {
-    Hitch.Model.prototype.constructor.call(this, attributes, options);
-  };
-
-  Hitch.User.extend = extend;
-
-  _.extend(Hitch.User.prototype, Hitch.Model.prototype, {
-    constructor: Hitch.User
-  });
-
-
-
-  /**
-   * Hitch.View
-   * @param options
-   * @constructor
-   */
   Hitch.View = function(options) {
+    if (options && options.resource) this.resource = options.resource;
     Backbone.View.prototype.constructor.call(this, options);
-  };
+  }
 
-  Hitch.View.extend = extend;
+  Hitch.View.extend = Backbone.View.extend;
 
   _.extend(Hitch.View.prototype, Backbone.View.prototype, {
 
-    constructor: Hitch.View,
+    delegateBindings: function() {
+
+      _.each(_.toArray(this.$('[data-bind]')), function(node) {
+
+        var attr = $(node).data('bind')
+          , prop = $(node).data('bind-attribute');
+
+        this.model.on('change:' + attr, function() {
+
+          if (prop) {
+            $(node).attr(prop, this.model.get(attr));
+          } else {
+            $(node).html(this.model.get(attr));
+          }
+
+        }, this);
+      }, this);
+
+    },
 
     close: function() {
 
@@ -471,87 +590,203 @@
 
       this.undelegateEvents();
       this.remove();
+    },
+
+    open: function(selector) {
+
+      this.delegateEvents();
+      this.delegateBindings();
+
+      if (this.beforeOpen) {
+        this.$el.hide();
+        this.beforeOpen(_.bind(function() {
+          this.$el.show();
+        }, this));
+      }
+
     }
 
   });
 
-
-
-  /**
-   * Hitch.App
-   * @param options
-   * @constructor
-   */
   Hitch.App = function(options) {
-
-    Backbone.Model.prototype.constructor.call(this);
 
     options = options || {};
 
-    if (_.isString(options)) {
-      options = { name: options };
+    if (!_.isObject(options)) {
+      options = _.object(['name', 'apiUrl', 'baseRoute'], _.toArray(arguments));
     }
 
-    if (!options.name) options.name = 'HitchApp';
-    if (!options.user) options.user = new Hitch.User({ id: new ObjectId().toString(), username: 'anonymous' });
+    if (options.apiUrl) this.apiUrl = options.apiUrl;
+    if (options.baseRoute) this.baseRoute = options.baseRoute;
+    if (options.name) this.setName(options.name);
+    if (!_.isRegExp(this.baseRoute)) this.baseRoute = Backbone.Router.prototype._routeToRegExp(this.baseRoute);
 
-    if (options.assets) {
-      _.each(options.assets, function(asset) {
-        this.addAsset(asset);
-      }, this);
+    // error route
+    Backbone.history.route(/^(.+?)$/, _.bind(function(fragment) {
+      var args = Backbone.Router.prototype._extractParameters(/^(.*?)$/, fragment);
+      this.error.apply(this, args);
+      this.trigger.apply(this, ['route:error'].concat(args));
+      Backbone.history.trigger('route', this, 'error', args);
+    }, this));
+
+    // home route
+    Backbone.history.route(this.baseRoute, _.bind(function(fragment) {
+      var args = Backbone.Router.prototype._extractParameters(this.baseRoute, fragment);
+      this.index.apply(this, args);
+      this.trigger.apply(this, ['route:index'].concat(args));
+      Backbone.history.trigger('route', this, 'index', args);
+    }, this));
+
+    // enable pushState style
+    if (this.pushState) {
+
+      $('a').live('click', function(e) {
+        var href = $(this).attr('href')
+        if (!$(this).attr('target') && !/^(http\:\/\/|www\.)/.test(href)) {
+          e.preventDefault();
+          Backbone.history.navigate(href, true);
+        }
+      });
+
     }
 
-    this.setName(options.name);
-    this.setCurrentUser(options.user);
-    this.init.apply(this, arguments);
+    this.on('ready', this.ready, this);
+    this.initialize.call(this, _.toArray(arguments));
   };
 
-  Hitch.App.extend = extend;
+  Hitch.App.extend = Backbone.Router.extend;
+  _.extend(Hitch.App.prototype, Backbone.Events, {
 
-  _.extend(Hitch.App.prototype, Hitch.Model.prototype, {
+    baseRoute: /^$/,
 
-    constructor: Hitch.App,
+    apiUrl: '',
 
-    setCurrentUser: function(user, options) {
+    pushState: false,
 
-      if (!user instanceof Hitch.User) {
-        user = new Hitch.User(user);
-      }
+    exports: false,
 
-      this.set('user', user, options);
-    },
-
-    getCurrentUser: function() {
-      return this.get('user');
-    },
-
-    setName: function(name, options) {
-      this.set('name', name, options);
-    },
+    name: 'app',
 
     getName: function() {
-      return this.get('name');
+      return this.name;
     },
 
-    addAsset: function(asset) {
-      var assets;
+    setName: function(name) {
+      this.name = document.title = name || document.title;
+    },
 
-      if (!asset instanceof Hitch.Asset) {
-        throw new Hitch.Error('Invalid asset.');
+    getBaseRoute: function() {
+      return this.baseRoute;
+    },
+
+    getPublicInterface: function() {
+      var publicInterfaceMethodNames = _.filter(_.keys(this), function(key) { return key.charAt(0) !== '_'; })
+      return _.pick(this, publicInterfaceMethodNames);
+    },
+
+    appendAsset: function(type, source) {
+      if (type === 'stylesheet') {
+        $('<link rel="stylesheet" type="text/css" href="' + source + '">').appendTo('head');
+      } else if (type === 'javascript') {
+        $('<script type="text/javascript" src="' + source + '"></script>').appendTo('head');
+      }
+    },
+
+    load: function(resources) {
+
+      var length
+        , loaded = 0;
+
+      if (!_.isArray(resources)) {
+        resources = _.toArray(arguments);
       }
 
-      assets = this.get('assets') || [];
-      this.set('assets', assets.concat([ asset ]));
-    },
+      length = resources.length;
+      this.resources = {};
 
-    init: function() {
-      // overwrite in subclasses
+      _.each(resources, function(resource) {
+
+        if (_.isFunction(resource)) {
+          resource = new resource();
+        }
+
+        if (!resource.name) {
+          resource.name = _.uniqueId('r');
+        }
+
+        if (this.apiUrl) {
+          resource.url = [ this.apiUrl, resource.name ].join('/');
+        }
+
+        resource.fetch({
+          success: _.bind(function(collection) {
+            this.resources[collection.name] = collection;
+            if (++loaded === length) {
+              this.trigger('ready', this.resources);
+            }
+          }, this)
+        });
+
+      }, this);
+
     },
 
     run: function() {
-      Backbone.history.start();
+
+      Backbone.history.start({ pushState: this.pushState });
+
+      if (this.exports) {
+        var globalName = _.isString(this.exports) ? this.exports : this.name;
+        root[globalName] = this.getPublicInterface();
+      }
+    },
+
+    initialize: function() {
+      // overwrite in subclasses
+    },
+
+    ready: function() {
+      // overwrite in subclasses
+    },
+
+    index: function() {
+      // overwrite in subclasses (default home route)
+    },
+
+    error: function() {
+      // overwrite in subclasses
     }
 
   });
+
+  Hitch.sync = function(method, model, options) {
+
+    var success = options.success
+      , item;
+
+    if (model.isStoredLocally) {
+
+      if (!model.storageKey) {
+        model.storageKey = _.uniqueId('h');
+      }
+
+      item = localStorage.getItem(model.storageKey);
+
+      if (method === 'create' || method === 'update') {
+        item = model.toJSON();
+        localStorage.setItem(model.storageKey, JSON.stringify(item));
+      } else if (method === 'read') {
+        item = item && JSON.parse(item);
+      } else if (method === 'destroy') {
+        if (item) localStorage.removeItem(model.storageKey);
+      }
+
+      if (success) success(item);
+      return true;
+
+    } else {
+      return Backbone.sync(method, model, options);
+    }
+  };
 
 }).call(this);
