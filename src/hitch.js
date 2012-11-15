@@ -296,7 +296,7 @@
      */
     validate: function(attributes) {
 
-      if (!attributes || !_.isPlainObject(attributes)) {
+      if (!attributes || !$.isPlainObject(attributes)) {
         return "invalid credentials.";
       }
 
@@ -414,7 +414,7 @@
      * @return {[]}
      */
     findOne: function(criteria) {
-      if (!_.isPlainObject(criteria)) return;
+      if (!$.isPlainObject(criteria)) return;
       return this.find(criteria, { limit: 1 });
     },
 
@@ -602,7 +602,10 @@
      */
     _applyFilters: function(type, fragment, args) {
 
-      var filters, ret;
+      var allMethod = type + 'All'
+        , filterAll = _.has(this, allMethod) ? this[allMethod] : false
+        , filters
+        , ret;
 
       if (!this._filters[type] || _.isEmpty(this._filters[type])) {
         return true;
@@ -622,12 +625,8 @@
         return _.compact(ret).length === 0;
       }, this);
 
-      if (type === 'before' && _.isFunction(this.beforeAll)) {
-        ret = ret && this.beforeAll();
-      }
-
-      if (type === 'after' && _.isFunction(this.afterAll)) {
-        ret = ret && this.afterAll();
+      if (_.isFunction(filterAll)) {
+        ret = ret && filterAll();
       }
 
       return ret;
@@ -728,7 +727,7 @@
     options = options || {};
 
     // map arguments to properties if options is not a plain object (e.g: { a: 'b', c: 'd' })
-    if (!_.isPlainObject(options)) {
+    if (!$.isPlainObject(options)) {
       options = _.object(['name', 'apiUrl', 'baseRoute'], _.toArray(arguments));
     }
 
@@ -761,7 +760,7 @@
     // enable pushState style
     if (this.pushState) {
       // filter internal links and map them to backbone history
-      $('a').on('click', function(e) {
+      $('a[href]').live('click', function(e) {
         var href = $(this).attr('href');
         if (!$(this).attr('target') && !/^(http\:\/\/|www\.)/.test(href)) {
           e.preventDefault();
