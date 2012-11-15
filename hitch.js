@@ -13,11 +13,14 @@
     , Backbone = root.Backbone
     , _ = root._
     , ObjectId = root.ObjectId
-    , Hitch = root.Hitch = {};
+    , Hitch = root.Hitch = {}
+    , extend;
 
   if (!_) throw new Error("Hitch requires underscore.");
   if (!Backbone) throw new Error("Hitch requires backbone.");
   if (!ObjectId) throw new Error("Hitch requires ObjectId.");
+
+  extend = Backbone.Router.extend;
 
   Hitch.VERSION = '0.0.2';
 
@@ -153,6 +156,10 @@
 
   };
 
+  /**
+   * Hitch.Credentials
+   * @extend Backbone.Model
+   */
   Hitch.Object = Backbone.Model.extend({
 
     idAttribute: '_id',
@@ -220,22 +227,40 @@
 
   });
 
+  /**
+   * Hitch.Role
+   * @extend Hitch.Object
+   */
   Hitch.Role = Hitch.Object.extend({
 
     defaults: {
       name: 'anonymous'
     },
 
+    /**
+     * Returns the name of this role
+     * @return {String}
+     */
     getName: function() {
       return this.get('name');
     },
 
+    /**
+     * Sets the name of this role
+     * @param name
+     * @param options
+     * @return {*}
+     */
     setName: function(name, options) {
       return this.set('name', name, options);
     }
 
   });
 
+  /**
+   * Hitch.User
+   * @extend Hitch.Object
+   */
   Hitch.User = Hitch.Object.extend({
 
     loggedIn: false,
@@ -244,19 +269,36 @@
       role: Hitch.Role
     },
 
+    /**
+     * Returns wether this user is logged in or not
+     */
     isLoggedIn: function() {
       return this.loggedIn;
     }
 
   });
 
+  /**
+   * Hitch.Credentials
+   * @extend Hitch.Object
+   */
   Hitch.Credentials = Hitch.Object.extend({
 
+    // the name of the login attribute
     userAttribute: 'username',
 
+    // the name of the password attribute
     passAttribute: 'password',
 
+    /**
+     * Validates given credentials
+     * @param attributes
+     */
     validate: function(attributes) {
+
+      if (!attributes || !_.isPlainObject(attributes)) {
+        return "invalid credentials.";
+      }
 
       if (!attributes[this.userAttribute]) {
         return "no " + this.userAttribute + " given.";
@@ -268,6 +310,11 @@
 
     },
 
+    /**
+     * Initializes user credentials
+     * @param attrs
+     * @param options
+     */
     initialize: function(attrs, options) {
 
       options = options || {};
@@ -283,6 +330,10 @@
       }
     },
 
+    /**
+     * Trys to authenticate the user and updates models and cookies
+     * @param options
+     */
     fetch: function(options) {
 
       var success
@@ -315,25 +366,39 @@
 
   });
 
+  /**
+   * Hitch.Resource
+   * @extend Backbone.Collection
+   */
   Hitch.Resource = Backbone.Collection.extend({
 
+    // list of comparison operators
     operators: '$eq $in $or $gt $gte $lt $lte'.split(' '),
 
+    // base model
     model: Hitch.Object,
 
+    // returns the acl for this resource
     getACL: Hitch.Object.prototype.getACL,
 
+    // sets the acl for this resource
     setACL: Hitch.Object.prototype.setACL,
 
-    find: function(attrs, options) {
+    /**
+     * Finds models matching the given criteria
+     * @param criteria the criteria to filter for
+     * @param options (optional)
+     * @return {[]} list of matched models
+     */
+    find: function(criteria, options) {
 
       var results;
 
-      if (_.isEmpty(attrs)) return this.models;
+      if (_.isEmpty(criteria)) return this.models;
 
       results = this.filter(function(model) {
-        for (var key in attrs) {
-          if (!this._evaluateCriteria(model, key, attrs[key])) {
+        for (var key in criteria) {
+          if (!this._evaluateCriteria(model, key, criteria[key])) {
             return false;
           }
         }
@@ -343,11 +408,25 @@
       return options.limit ? _.first(results, options.limit) : results;
     },
 
+    /**
+     * Finds one result matching the criteria
+     * @param criteria
+     * @return {[]}
+     */
     findOne: function(criteria) {
       if (!_.isPlainObject(criteria)) return;
       return this.find(criteria, { limit: 1 });
     },
 
+    /**
+     * Evaluates the search-criteria for a given attribute on the model
+     * @param model the model to use
+     * @param attr the attribute name of the property to check
+     * @param value the expected value
+     * @param operator (optional) operator to use for comparison
+     * @return Boolean
+     * @private
+     */
     _evaluateCriteria: function(model, attr, value, operator) {
 
       function returnVal(statement, op, condition) {
@@ -385,41 +464,72 @@
 
   });
 
+  /**
+   * Hitch.Router
+   * @param options
+   * @constructor
+   */
   Hitch.Router = function(options) {
 
     options = options || {};
 
+    // inject options
     if (options.resource) this.resource = options.resource;
     if (options.routes) this.routes = options.routes;
 
+    // bind filters
     this._bindFilters();
+
+    // bind routes
     this._bindRoutes();
 
+    // call initialize
     this.initialize.apply(this, arguments);
   };
 
-  Hitch.Router.extend = Backbone.Router.extend;
+  // make it extendable
+  Hitch.Router.extend = extend;
 
+  /**
+   * Hitch.Router.prototype
+   */
   _.extend(Hitch.Router.prototype, Backbone.Router.prototype, {
 
     constructor: Hitch.Router,
 
-    before: {},
-
-    after: {},
-
+    // used display slots
     _displaySlots: {},
 
+    // route filters
     _filters: {},
 
+    /**
+     * Adds an after filter
+     * @param route
+     * @param filter
+     * @param context
+     */
     onAfter: function(route, filter, context) {
       this._addFilter.apply(this, ['after'].concat(_.toArray(arguments)));
     },
 
+    /**
+     * Adds a before filter
+     * @param route
+     * @param filter
+     * @param context
+     */
     onBefore: function(route, filter, context) {
       this._addFilter.apply(this, ['before'].concat(_.toArray(arguments)));
     },
 
+    /**
+     * Routes the request
+     * @param route
+     * @param name
+     * @param callback
+     * @return {*}
+     */
     route: function(route, name, callback) {
 
       if (!_.isRegExp(route)) {
@@ -445,11 +555,16 @@
 
         }
 
-
       }, this));
       return this;
     },
 
+    /**
+     * displays a view at the given selector
+     * @param selector
+     * @param view
+     * @return {*}
+     */
     showView: function(selector, view) {
 
       if (this._displaySlots[selector]) {
@@ -464,6 +579,14 @@
 
     },
 
+    /**
+     * Adds a filter to the list of route filters
+     * @param type
+     * @param route
+     * @param filter
+     * @param context
+     * @private
+     */
     _addFilter: function(type, route, filter, context) {
       var routeFilters;
       if (!this._filters[type]) this._filters[type] = {};
@@ -471,6 +594,12 @@
       routeFilters[routeFilters.length] = _.bind(filter, context || this);
     },
 
+    /**
+     * Applies routing filters of the given type
+     * @param type
+     * @param fragment
+     * @param args
+     */
     _applyFilters: function(type, fragment, args) {
 
       var filters, ret;
@@ -504,6 +633,10 @@
       return ret;
     },
 
+    /**
+     * binds after and before callback handlers
+     * @private
+     */
     _bindFilters: function() {
       for (var a in this.after) this._addFilter('after', a, this.after[a]);
       for (var b in this.before) this._addFilter('before', b, this.before[b]);
@@ -511,15 +644,27 @@
 
   });
 
+  /**
+   * Hitch.View
+   * @param options
+   * @constructor
+   */
   Hitch.View = function(options) {
     if (options && options.resource) this.resource = options.resource;
     Backbone.View.prototype.constructor.call(this, options);
   }
 
-  Hitch.View.extend = Backbone.View.extend;
+  // make it extendable
+  Hitch.View.extend = extend;
 
+  /**
+   * Hitch.View.prototype
+   */
   _.extend(Hitch.View.prototype, Backbone.View.prototype, {
 
+    /**
+     * delegates data-binding event handlers
+     */
     delegateBindings: function() {
 
       _.each(_.toArray(this.$('[data-bind]')), function(node) {
@@ -540,6 +685,9 @@
 
     },
 
+    /**
+     * closes this view
+     */
     close: function() {
 
       if (this.beforeClose) {
@@ -550,6 +698,10 @@
       this.remove();
     },
 
+    /**
+     * opens this view at the given selector
+     * @param selector
+     */
     open: function(selector) {
 
       this.delegateEvents();
@@ -566,20 +718,31 @@
 
   });
 
+  /**
+   * Hitch.App
+   * @param options
+   * @constructor
+   */
   Hitch.App = function(options) {
 
     options = options || {};
 
-    if (!_.isObject(options)) {
+    // map arguments to properties if options is not a plain object (e.g: { a: 'b', c: 'd' })
+    if (!_.isPlainObject(options)) {
       options = _.object(['name', 'apiUrl', 'baseRoute'], _.toArray(arguments));
     }
 
+    // inject mandatory options
     if (options.apiUrl) this.apiUrl = options.apiUrl;
     if (options.baseRoute) this.baseRoute = options.baseRoute;
     if (options.name) this.setName(options.name);
-    if (!_.isRegExp(this.baseRoute)) this.baseRoute = Backbone.Router.prototype._routeToRegExp(this.baseRoute);
 
-    // error route
+    // ensure base route is an instance of RegExp
+    if (!_.isRegExp(this.baseRoute)) {
+      this.baseRoute = Backbone.Router.prototype._routeToRegExp(this.baseRoute);
+    }
+
+    // setup the error route
     Backbone.history.route(/^(.+?)$/, _.bind(function(fragment) {
       var args = Backbone.Router.prototype._extractParameters(/^(.*?)$/, fragment);
       this.error.apply(this, args);
@@ -587,7 +750,7 @@
       Backbone.history.trigger('route', this, 'error', args);
     }, this));
 
-    // home route
+    // setup the home route
     Backbone.history.route(this.baseRoute, _.bind(function(fragment) {
       var args = Backbone.Router.prototype._extractParameters(this.baseRoute, fragment);
       this.index.apply(this, args);
@@ -597,51 +760,82 @@
 
     // enable pushState style
     if (this.pushState) {
-
-      $('a').live('click', function(e) {
-        var href = $(this).attr('href')
+      // filter internal links and map them to backbone history
+      $('a').on('click', function(e) {
+        var href = $(this).attr('href');
         if (!$(this).attr('target') && !/^(http\:\/\/|www\.)/.test(href)) {
           e.preventDefault();
           Backbone.history.navigate(href, true);
         }
       });
-
     }
 
+    // apply the ready state callback (when all resources are fetched successfully)
     this.on('ready', this.ready, this);
+
+    // call initialize
     this.initialize.call(this, _.toArray(arguments));
   };
 
-  Hitch.App.extend = Backbone.Router.extend;
+  // make it extendable
+  Hitch.App.extend = extend;
+
+  /**
+   * Hitch.App.prototype
+   */
   _.extend(Hitch.App.prototype, Backbone.Events, {
 
+    // the base route for the home action
     baseRoute: /^$/,
 
+    // the base api url
     apiUrl: '',
 
+    // enables pushState support
     pushState: false,
 
+    // exports the application public interface to the global object (window or globals)
     exports: false,
 
+    // the application name
     name: 'app',
 
+    /*
+     * Returns the application name
+     */
     getName: function() {
       return this.name;
     },
 
+    /**
+     * Sets the application title and modifies the document.title
+     * @param name
+     */
     setName: function(name) {
-      this.name = document.title = name || document.title;
+      this.name = document.title = ( name || document.title );
     },
 
+    /**
+     * Returns the application's base route
+     */
     getBaseRoute: function() {
       return this.baseRoute;
     },
 
+    /**
+     * Returns the public interface for this application
+     * @return {*}
+     */
     getPublicInterface: function() {
       var publicInterfaceMethodNames = _.filter(_.keys(this), function(key) { return key.charAt(0) !== '_'; })
       return _.pick(this, publicInterfaceMethodNames);
     },
 
+    /**
+     * Appends an asset to the document head
+     * @param type
+     * @param source
+     */
     appendAsset: function(type, source) {
       if (type === 'stylesheet') {
         $('<link rel="stylesheet" type="text/css" href="' + source + '">').appendTo('head');
@@ -650,6 +844,10 @@
       }
     },
 
+    /**
+     * Loads all resources and fires a ready event when all resources are in sync with the server.
+     * @param resources
+     */
     load: function(resources) {
 
       var length
@@ -689,6 +887,9 @@
 
     },
 
+    /**
+     * Launches the application
+     */
     run: function() {
 
       Backbone.history.start({ pushState: this.pushState });
@@ -717,6 +918,9 @@
 
   });
 
+  /**
+   * Synchronize method that is used by all modules
+   */
   Hitch.sync = function(method, model, options) {
 
     var success = options.success
