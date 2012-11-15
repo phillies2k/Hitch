@@ -950,4 +950,181 @@
     }
   };
 
+  Hitch.Cookies = {
+
+    get: function (sKey) {
+      if (!sKey || !this.has(sKey)) { return null; }
+      return unescape(document.cookie.replace(new RegExp("(?:^|.*;\\s*)" + escape(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*((?:[^;](?!;))*[^;]?).*"), "$1"));
+    },
+
+    set: function(name, value, expires, path, domain, secure) {
+      var cookie = {};
+
+      if (!name || /^(?:expires|max\-age|path|domain|secure)$/i.test(name)) return;
+
+      cookie[name] = escape(value);
+
+      _.extend(cookie, _.object(
+        ['expires', 'path', 'domain', 'secure'],
+        _.rest(_.toArray(arguments), 2)
+      ));
+
+      if (cookie.expires && cookie.expires.constructor === Number) {
+        if (cookie.expires === Infinity) {
+          cookie.expires = 'Tue, 19 Jan 2038 03:14:07 GMT';
+        } else {
+          cookie['max-age'] = cookie.expires;
+          delete cookie.expires;
+        }
+      } else if (cookie.expires && cookie.expires.constructor === Date) {
+        cookie.expires = cookie.expires.toGMTString();
+      } else if (cookie.expires && cookie.expires.constructor !== String) {
+        delete cookie.expires;
+      }
+
+      document.cookie = _.compact(_.map(_.pairs(cookie), function(pair) {
+        return !_.isUndefined(pair[1]) && pair.join('=');
+      })).join(';');
+    },
+
+    clear: function (name, path) {
+      if (!name || !this.has(name)) return;
+      document.cookie = escape(name) + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT" + (path ? "; path=" + path : "");
+    },
+
+    has: function (name) {
+      return _.indexOf(this.names(), name) !== -1;
+    },
+
+    names: function () {
+      return _.map(document.cookie
+        .replace(/((?:^|\s*;)[^\=]+)(?=;|$)|^\s*|\s*(?:\=[^;]*)?(?:\1|$)/g, "")
+        .split(/\s*(?:\=[^;]*)?;\s*/)
+        , function(name) {
+          return unescape(name);
+        });
+    }
+  };
+
+  Hitch.Helpers = {
+
+    createdAt: function(id) {
+      return new ObjectId(id).getDate();
+    },
+
+    formField: function(model, attr, options) {
+
+      function onFocus(e) {
+        $('label[for^=' + _id + ']').removeClass('error')
+        $(selector).removeClass('error').next('span').remove();
+        prev = $(selector).val();
+      }
+
+      function onBlur(e) {
+
+        var attrs = {}
+          , value = $(selector).val();
+
+        if (prev === curr) return;
+
+        if (options.prop) {
+          attrs[attr] = {};
+          attrs[attr][options.prop] = value;
+        } else {
+          attrs[attr] = value;
+        }
+
+        model.on('error', function(m, err) {
+          $('label[for^=' + _id + ']').addClass('error')
+          $(selector).addClass('error').val(prev).insertAfter(
+            $('<span></span>').text(err)
+          );
+        });
+
+        model.set(attrs);
+        if (options.save) model.save();
+      }
+
+      var curr = model.get(attr)
+        , type
+        , selector = '#' + attr + (model.isNew() ? '' : '-' + model.id )
+        , _id = selector.substring(1)
+        , prev = $(selector).val()
+        , tagName = 'input'
+        , label = attr
+        , attrs = { id: _id, value: curr };
+
+      options = options || {};
+
+      if (_.isBoolean(options)) options = { save: options };
+      if (_.isString(options)) options = { label: options };
+      if (options.label) label = options.label;
+      if (options.password) type = 'password';
+      if (options.placeholder) attrs.placeholder = options.placeholder;
+      if (options.prop && curr && _.has(curr, options.prop)) curr = attrs.value = curr[options.prop];
+
+      type = attrs.type = type || ( _.isBoolean(curr) ? 'checkbox' : ( _.isNumber(curr) ? 'number' : 'text' ));
+
+      if (options.text) {
+        tagName = 'textarea';
+        attrs = _.pick(attrs, 'id', 'placeholder');
+      } else if (options.source instanceof Hitch.Resource) {
+        tagName = 'select';
+        attrs = _.pick(attrs, 'id', 'placeholder');
+        _.each(options.source, function(model) {
+          _.tagFor('option', { value: model.get() }, model.get())
+        });
+      }
+
+      _.inDom(selector, function() {
+        $(selector).on('focus', onFocus);
+        $(selector).on('blur', onBlur);
+      });
+
+      return _.tagFor('dt', _.tagFor('label', { for: _id }, label)) +
+        _.tagFor('dd', _.tagFor(tagName, attrs, options.text && curr));
+    },
+
+    inDom: function(el, callback) {
+      var timer, to;
+      (timer = function() {
+        if (!$(el).length) return to = setTimeout(timer, 20);
+        if (to) clearTimeout(to);
+        callback();
+      })();
+    },
+
+    tagFor: function(tagName, attrs, content) {
+
+      var _noClosingTags = 'link input meta'.split(' ')
+
+      if (attrs && !content && !_.isObject(attrs)) {
+        content = attrs;
+        attrs = {};
+      }
+
+      return '<' + tagName + ' ' + _.flatten(_.map(_.pairs(attrs), function(attr) {
+        return attr.join('="') + '"';
+      })).join(' ') + '>' +
+        ( content
+          ? content
+          : ''
+          ) +
+        ( _noClosingTags.indexOf(tagName) >= 0
+          ? ''
+          : '</' + tagName + '>'
+          );
+    },
+
+    ucFirst: function(str) {
+      return str.charAt(0).toUpperCase() + str.substring(1);
+    },
+
+    lcFirst: function(str) {
+      return str.charAt(0).toLowerCase() + str.substring(1);
+    }
+  };
+
+  _.mixin(Hitch.Helpers);
+
 }).call(this);
