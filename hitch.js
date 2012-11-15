@@ -315,48 +315,6 @@
 
   });
 
-  var ops = '$eq $in $or $gt $gte $lt $lte'.split(' ')
-    , cmd = '=== $in || > >= < <='.split(' ');
-
-  function evaluateCriteria(attr, value, op) {
-
-    var pos = ops.indexOf(attr);
-    op = op || '$eq';
-
-    if (pos >= 0) {
-
-      op = cmd[pos];
-
-      if (!_.isObject(value)) {
-        throw new Error("invalid hash format for ".attr);
-      }
-
-      for (var key in value) {
-        if (!evaluateCriteria(key, value[key], attr)) {
-          return false;
-        }
-      }
-
-    }
-
-    switch (op) {
-      case '$eq':
-        return this.get(attr) === value;
-      case '$in':
-        return this.get(attr).indexOf(value) >= 0;
-      case '$gt':
-        return this.get(attr) > value;
-      case '$gte':
-        return this.get(attr) >= value;
-      case '$lt':
-        return this.get(attr) < value;
-      case '$lte':
-        return this.get(attr) <= value;
-      case '$or':
-        return this.get(attr) || value;
-    }
-  }
-
   Hitch.Resource = Backbone.Collection.extend({
 
     operators: '$eq $in $or $gt $gte $lt $lte'.split(' '),
