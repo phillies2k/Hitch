@@ -9,6 +9,7 @@
  */
 (function() {
 
+  // setup
   var root = this
     , Backbone = root.Backbone
     , _ = root._
@@ -16,14 +17,22 @@
     , Hitch = root.Hitch = {}
     , extend;
 
+  // check dependencies
   if (!_) throw new Error("Hitch requires underscore.");
   if (!Backbone) throw new Error("Hitch requires backbone.");
   if (!ObjectId) throw new Error("Hitch requires ObjectId.");
 
+  // cache extend
   extend = Backbone.Router.extend;
 
+  // keep in syn with package.json
   Hitch.VERSION = '0.0.2';
 
+  /**
+   * Hitch.ACL
+   * @param permissions
+   * @constructor
+   */
   Hitch.ACL = function(permissions) {
 
     this.permissions = {};
@@ -48,12 +57,23 @@
     }
   };
 
+  // Public access role
   Hitch.ACL.PUBLIC = 'PUBLIC';
 
+  /**
+   * Hitch.ACL.prototype
+   * @type {Object}
+   */
   Hitch.ACL.prototype = {
 
     constructor: Hitch.ACL,
 
+    /**
+     * Returns the user id
+     * @param userId
+     * @return {*}
+     * @private
+     */
     _determineUserId: function(userId) {
       if (userId instanceof Hitch.User) {
         return userId.id;
@@ -68,6 +88,13 @@
       }
     },
 
+    /**
+     * Returns access permissions for the given access type and user id
+     * @param accessType
+     * @param userId
+     * @return {*}
+     * @private
+     */
     _getAccess: function(accessType, userId) {
 
       var permissions;
@@ -79,6 +106,13 @@
 
     },
 
+    /**
+     * Sets the access rights for the given access type and user id
+     * @param accessType
+     * @param userId
+     * @param allowed
+     * @private
+     */
     _setAccess: function(accessType, userId, allowed) {
 
       var permissions;
@@ -102,54 +136,114 @@
       }
     },
 
+    /**
+     * Returns the public read access permission
+     * @return {*}
+     */
     getPublicReadAccess: function() {
       return this._getAccess('read', Hitch.ACL.PUBLIC);
     },
 
+    /**
+     * Sets the public read access permission
+     * @param allowed
+     */
     setPublicReadAccess: function(allowed) {
       this._setAccess('read', Hitch.ACL.PUBLIC, allowed);
     },
 
+    /**
+     * Returns role read permissions
+     * @param role
+     * @return {*}
+     */
     getRoleReadAccess: function(role) {
       return this._getAccess('read', role);
     },
 
+    /**
+     * Sets read access permissions for the given role
+     * @param role
+     * @param allowed
+     */
     setRoleReadAccess: function(role, allowed) {
       this._setAccess('read', role, allowed);
     },
 
+    /**
+     * Returns the read access permission for a given user id
+     * @param userId
+     * @return {*}
+     */
     getReadAccess: function(userId) {
       return this._getAccess('read', userId);
     },
 
+    /**
+     * Sets the read access permission for a given user id
+     * @param userId
+     * @param allowed
+     */
     setReadAccess: function(userId, allowed) {
       this._setAccess('read', userId, allowed);
     },
 
+    /**
+     * Returns the write access permission for a given user id
+     * @param userId
+     * @return {*}
+     */
     getWriteAccess: function(userId) {
       return this._getAccess('write', userId);
     },
 
+    /**
+     * Sets the write access permission for a given user id
+     * @param userId
+     * @param allowed
+     */
     setWriteAccess: function(userId, allowed) {
       this._setAccess('write', userId, allowed);
     },
 
+    /**
+     * Returns the public write access permission
+     * @return {*}
+     */
     getPublicWriteAccess: function() {
       return this._getAccess('write', Hitch.ACL.PUBLIC);
     },
 
+    /**
+     * Sets the public write access permission
+     * @param allowed
+     */
     setPublicWriteAccess: function(allowed) {
       this._setAccess('write', Hitch.ACL.PUBLIC, allowed);
     },
 
+    /**
+     * Returns the write access permission for a given role
+     * @param role
+     * @return {*}
+     */
     getRoleWriteAccess: function(role) {
       return this._getAccess('write', Hitch.ACL.PUBLIC);
     },
 
+    /**
+     * Sets the write access permission for a given role
+     * @param role
+     * @param allowed
+     */
     setRoleWriteAccess: function(role, allowed) {
       this._setAccess('write', role, allowed);
     },
 
+    /**
+     * Returns a JSON representation of this ACL's permissions
+     * @return {*}
+     */
     toJSON: function() {
       return _.clone(this.permissions);
     }
@@ -172,6 +266,10 @@
 
     relations: {},
 
+    /**
+     * Returns the acl instance for this object
+     * @return {*}
+     */
     getACL: function() {
 
       if (!this.acl) {
@@ -181,6 +279,12 @@
       return this.acl
     },
 
+    /**
+     * Wrapper for Backbone.Model.prototype.set
+     * Wires relations and id attributes
+     * @param attrs
+     * @param options
+     */
     set: function(attrs, options) {
 
       _.each(this.relations, function(constructor, name) {
@@ -197,6 +301,7 @@
 
         if (attrs[name]) {
           related[ related instanceof Backbone.Collection ? 'reset' : 'set' ](attrs[name], options);
+          attrs[name] = related.toJSON();
         }
 
       }, this);
@@ -210,10 +315,21 @@
       return Backbone.Model.prototype.set.call(this, attrs, options);
     },
 
+    /**
+     * Wrapper for Backbone.sync
+     * @param method
+     * @param model
+     * @param options
+     * @return {*}
+     */
     sync: function(method, model, options) {
       return Hitch.sync.call(this, method, model, options);
     },
 
+    /**
+     * Returns the JSON representation of this object's data
+     * @return {*}
+     */
     toJSON: function() {
 
       var attributes = _.clone(this.attributes);
@@ -398,7 +514,7 @@
 
       results = this.filter(function(model) {
         for (var key in criteria) {
-          if (!this._evaluateCriteria(model, key, criteria[key])) {
+          if (!this._evaluateCriteria(model, key, criteria[key], null)) {
             return false;
           }
         }
@@ -411,7 +527,7 @@
     /**
      * Finds one result matching the criteria
      * @param criteria
-     * @return {[]}
+     * @return {*}
      */
     findOne: function(criteria) {
       if (!$.isPlainObject(criteria)) return;
@@ -429,7 +545,8 @@
      */
     _evaluateCriteria: function(model, attr, value, operator) {
 
-      function returnVal(statement, op, condition) {
+      function returnVal(statement, condition, op) {
+        if (!op) return statement == condition;
         switch (op) {
           case '$eq':
             return statement === condition;
@@ -446,12 +563,12 @@
           case '$lte':
             return statement <= condition;
           default:
-            return statement == condition;
+            return false;
         }
       }
 
       if (this.operators.indexOf(attr) === -1) {
-        return returnVal(model.get(attr), operator, value);
+        return returnVal(model.get(attr), value, operator);
       } else if (_.isObject(value)) {
         for (var p in value) {
           if (!this._evaluateCriteria(model, p, value[p], attr)) {
