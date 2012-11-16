@@ -17,12 +17,17 @@ Lightweight backbone-based single page application framework.
 
 * [Installation](#hitchinstallation)
 * [Setup](#hitchsetup)
-* [Configuration](#hitchconfiguration)
 * [Packages](#hitchpackages)
 
 ## Installation
+
+```npm install backbone-hitch```
+
 ## Setup
-## Configuration
+
+Create a fresh hitch-application boilerplate.
+```rake create path/to/my/app```
+
 ## Extensions
 
 Currently there are two basic extensions that come with Hitch. These serve several stand-alone mechanisms Hitch uses to
