@@ -300,8 +300,11 @@
         }
 
         if (attrs[name]) {
-          related[ related instanceof Backbone.Collection ? 'reset' : 'set' ](attrs[name], options);
-          attrs[name] = related.toJSON();
+          if (attrs[name] instanceof Backbone.Model || attrs[name] instanceof Backbone.Collection) {
+            attrs[name] = attrs[name].toJSON();
+          } else {
+            related[ related instanceof Backbone.Collection ? 'reset' : 'set' ](attrs[name], options);
+          }
         }
 
       }, this);
