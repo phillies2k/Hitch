@@ -21,12 +21,16 @@ Lightweight backbone-based single page application framework.
 
 ## Installation
 
-```npm install backbone-hitch```
+```bash
+npm install backbone-hitch
+```
 
 ## Setup
 
 Create a fresh hitch-application boilerplate.
-```rake create path/to/my/app```
+```bash
+rake create path/to/my/app
+```
 
 ## Extensions
 
