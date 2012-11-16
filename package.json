@@ -1,6 +1,6 @@
 {
 
-  "name": "Hitch",
+  "name": "backbone-hitch",
   "description": "Lightweight framework built on top of backbone",
   "keywords": ["framework", "util", "mvc", "SPA"],
   "url": "https://github.com/phillies2k/hitch",
