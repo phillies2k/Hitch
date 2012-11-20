@@ -311,7 +311,7 @@
 
       if (attrs[this.idAttribute]) {
         if (_.isObject(attrs[this.idAttribute]) && _.has(attrs[this.idAttribute], '$id')) {
-          attrs[this.idAttribute] = attrs[this.idAttribute].$id;
+          attrs[this.idAttribute] = attrs[this.idAttribute]['$id'];
         }
       }
 
@@ -409,6 +409,14 @@
     // the name of the password attribute
     passAttribute: 'password',
 
+    // cookie
+    cookie: {
+      expires: false,
+      path: false,
+      domain: false,
+      secure: false,
+    },
+
     /**
      * Validates given credentials
      * @param attributes
@@ -447,6 +455,22 @@
       if (options.url) {
         this.url = options.url;
       }
+
+      if (options.expires) {
+        this.cookie.expires = options.expires;
+      }
+
+      if (options.path) {
+        this.cookie.path = options.path;
+      }
+
+      if (options.domain) {
+        this.cookie.domain = options.domain;
+      }
+
+      if (options.secure) {
+        this.cookie.secure = !!options.secure;
+      }
     },
 
     /**
@@ -467,9 +491,10 @@
       options.type = 'POST';
 
       options.success = _.bind(function(response) {
+        var args = _.compact(_.values(this.cookie));
         this.user.loggedIn = true;
         this.user.set(response);
-        Hitch.Cookies.set('hitch-user', this.user.id);
+        Hitch.Cookies.set.call(null, ['hitch-user', this.user.id].concat(args));
         if (success) success(this, response);
       }, this);
 
@@ -596,6 +621,9 @@
     // inject options
     if (options.resource) this.resource = options.resource;
     if (options.routes) this.routes = options.routes;
+
+    // create an acl
+    this.acl = new Hitch.ACL(this);
 
     // bind filters
     this._bindFilters();
@@ -994,8 +1022,9 @@
         }
 
         resource.fetch({
-          success: _.bind(function(collection) {
-            this.resources[collection.name] = collection;
+          success: _.bind(function() {
+            this.resources[resource.name] = resource;
+            resource.trigger('load');
             if (++loaded === length) {
               this.trigger('ready', this.resources);
             }
