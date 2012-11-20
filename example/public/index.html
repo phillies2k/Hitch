@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+  <meta charset="utf8">
+
+  <title>Hitch Example App</title>
+
+  <script type="text/javascript" data-main="main" src="../vendor/require.js"></script>
+
+</head>
+<body>
+
+<div id="overlay"></div>
+<div id="login-register"></div>
+<header id="header"></header>
+<div id="content"></div>
+
+<script id="header-view" type="text/template">
+  <hgroup>
+    <h1><a href="">Example Hitch App</a></h1>
+  <% if (user.loggedIn) { %>
+    <p><span>logged in as: <%= username %></span> [ created: <%= _.createdAt(_id) %> ] | <a href="logout">Logout</a> </p>
+  <% } else { %>
+    <p><a href="login">login</a></p>
+  <% } %>
+  </hgroup>
+
+  <nav>
+    <ul>
+      <li><a href="users">Users</a></li>
+      <li><a href="todos">Todos</a></li>
+    </ul>
+  </nav>
+
+
+</script>
+
+<script id="login-view" type="text/template">
+
+  <form id="login" class="hitch-form">
+    <fieldset>
+      <legend>Login</legend>
+      <div>
+        <label for="login-user">Username</label>
+        <input id="login-user" name="user" type="text" placeholder="username">
+      </div>
+      <div>
+        <label for="login-pass">Password</label>
+        <input id="login-pass" name="pass" type="password" placeholder="password">
+      </div>
+      <div>
+        <button type="submit">Login</button>
+      </div>
+    </fieldset>
+  </form>
+
+  <form id="register" class="hitch-form">
+    <fieldset>
+      <legend>Registration</legend>
+      <div>
+        <label for="register-user">Username</label>
+        <input id="register-user" name="user" type="text" placeholder="choose a username">
+      </div>
+      <div>
+        <label for="register-pass1">Password</label>
+        <input id="register-pass1" name="pass1" type="password" placeholder="choose a password">
+      </div>
+      <div>
+        <label for="register-pass2">Retype</label>
+        <input id="register-pass2" name="pass2" type="password" placeholder="retype your password">
+      </div>
+      <div>
+        <button type="submit">Sign up</button>
+      </div>
+    </fieldset>
+  </form>
+
+</script>
+
+
+<script id="user-list-view" type="text/template">
+  <h2>Users</h2>
+  <ul class="user-list"></ul>
+</script>
+
+<script id="user-list-item-view" type="text/template">
+  <a href="users/<%= _id %>"><%= username %></a>
+</script>
+
+<script id="user-view" type="text/template">
+
+  <header>
+    <h2><%= username %> (#<%= _id %>)</h2>
+    <hgroup>
+      <label for="resource-uri">Resource URI: <a href="<%= model.url() %>" target="resource-uri"><%= model.url() %></a></label>
+      <iframe name="resource-uri" id="resource-uri" src=""></iframe>
+    </hgroup>
+  </header>
+
+  <section>
+    <h3>Profile</h3>
+    <dl>
+      <%= _.labeledAttribute(model, 'username') %>
+      <%= _.labeledAttribute(model, 'email') %>
+      <%= _.labeledAttribute(model, 'password') %>
+      <%= _.labeledAttribute(model, 'role', { prop: 'name' }) %>
+    </dl>
+    <button type="destroy" name="destroy">delete</button>
+  </section>
+</script>
+
+</body>
+</html>
