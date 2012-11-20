@@ -35,6 +35,8 @@ function ucFirst(str) {
   return str.charAt(0).toUpperCase() + str.substring(1);
 }
 
+_.mixin({ ucFirst: ucFirst });
+
 function createFileFromTemplate(filename, template, data) {
 
   var filePath = PATH_BUILD + '/data/templates/' + template + '.ejs'

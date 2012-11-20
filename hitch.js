@@ -1024,7 +1024,7 @@
         resource.fetch({
           success: _.bind(function() {
             this.resources[resource.name] = resource;
-            resource.trigger('load');
+            resource.trigger('load', resource);
             if (++loaded === length) {
               this.trigger('ready', this.resources);
             }
