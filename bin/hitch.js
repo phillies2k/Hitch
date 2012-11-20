@@ -1,4 +1,13 @@
-
+/**
+ * Hitch Command Line Tool v0.9.3
+ * Lightweight backbone based single page application framework
+ *
+ * @author: Philipp Boes <mostgreedy@gmail.com>
+ * @copyright: (c) 2012 Philipp Boes
+ * @version: 0.9.3
+ *
+ *
+ */
 
 var exec = require('child_process').exec
   , fs = require('fs')
@@ -7,7 +16,7 @@ var exec = require('child_process').exec
   , PATH_BUILD = fs.realpathSync(PATH_ROOT + '/build')
   , _ = require('underscore')
   , inflect = require("inflection")
-  , args = process.argv
+  , args = _.rest(process.argv, 2)
   , appSkeleton = [
     'assets',
     'public',
@@ -20,29 +29,53 @@ var exec = require('child_process').exec
     'public/js/app/templates',
     'public/js/app/views',
     'public/js/vendor'
-  ]
-  , Package = parseJSONFile();
+  ];
 
-_.mixin({
-  ucFirst: function(str) {
-    return str.charAt(0).toUpperCase() + str.substring(1);
-  }
-});
-
-function createFileFromTemplate(filename, template, data) {
-  var file = fs.readFileSync(PATH_BUILD + '/data/templates/' + template + '.ejs');
-  fs.writeFileSync(filename, _.template(file.toString(), data));
+function ucFirst(str) {
+  return str.charAt(0).toUpperCase() + str.substring(1);
 }
 
-function createApplication(data) {
+function createFileFromTemplate(filename, template, data) {
 
+  var filePath = PATH_BUILD + '/data/templates/' + template + '.ejs'
+    , contents;
+
+  if (exists(filePath)) {
+    contents = fs.readFileSync(filePath).toString();
+    fs.writeFileSync(filename, _.template(contents, data));
+  }
+}
+
+function createApplication(path) {
+
+  var data = parseJSONFile();
+
+  // check configuration
   if (!_.isObject(data)) {
     console.log('invalid data argument.');
     process.exit();
     return;
   }
 
-  // clean up
+  // check data structure
+  if (!data.name || !data.version) {
+    console.log('invalid hitch configuration.');
+    process.exit();
+    return;
+  }
+
+  // ensure path
+  if (!path) {
+    path = process.cwd();
+  }
+
+  // check app dir
+  if (!exists(path)) {
+    fs.mkdirSync(path, 0755);
+  }
+
+  // change cwd
+  exec('cd ' + path);
 
   // create the app skeleton
   appSkeleton.forEach(function(p) {
@@ -65,7 +98,7 @@ function createApplication(data) {
     fs.mkdirSync(modulePath + '/templates', 0755);
     fs.mkdirSync(modulePath + '/views', 0755);
     createFileFromTemplate(modulePath + '/index.js', 'module', _.extend({
-      module: _.ucFirst(name)
+      module: ucFirst(name)
     }, data));
   });
 
@@ -73,8 +106,8 @@ function createApplication(data) {
   _.each(data.resources, function(resource, name) {
     var resourceFile = process.cwd() + '/public/js/app/resources/' + name + '.js';
     createFileFromTemplate(resourceFile, 'resource', _.extend({
-      resource: _.ucFirst(name),
-      model: _.ucFirst(inflect.singularize(name))
+      resource: name,
+      model: ucFirst(inflect.singularize(name))
     }, data));
   });
 }
@@ -84,7 +117,7 @@ function showHelp() {
   console.log('');
   console.log('+---------------------------------------------------------------+');
   console.log('|                      Hitch Console Utils                      |');
-  console.log('|                            v0.0.4v                             |');
+  console.log('|                            v0.9.2                             |');
   console.log('+---------------------------------------------------------------+');
   console.log('');
   console.log('USAGE: hitch [command] [args] (e.g. `hitch create MyApplication`)');
@@ -96,20 +129,51 @@ function showHelp() {
 
 }
 
-function parseJSONFile() {
-  var file = fs.readFileSync(process.cwd() + '/hitch.json');
-  return file && JSON.parse(file);
+
+function exists(name) {
+  var stat;
+
+  try {
+
+    stat = fs.lstatSync(name);
+    return stat.isFile() || stat.isDirectory();
+
+  } catch (err) {
+  }
+
+  return false;
 }
 
-if (!Package) {
-  console.log("ERROR: No hitch.json found!");
-} else if (args.length === 2) {
-  showHelp();
-} else if (args[2] === 'build') {
-  exec('uglifyjs ../hitch.js > ../hitch-0.0.3.min.js');
-  console.log('created minified version in hitch-0.0.3.min.js');
-} else if (args[2] === 'create') {
-  createApplication(Package);
+function parseJSONFile() {
+  if (exists('hitch.json')) {
+    return JSON.parse(fs.readFileSync('hitch.json'));
+  }
+}
+
+function buildMinified() {
+
+  if (!exists('hitch.json')) {
+    console.log("ERROR: No hitch.json found!");
+    process.exit();
+  }
+
+  var data = parseJSONFile();
+  exec('uglifyjs ../hitch.js > ../hitch-' + data.version + '.min.js');
+  console.log('created minified version in hitch-' + data.version + '.min.js');
+}
+
+if (args.length) {
+  switch (args[0]) {
+    case 'build':
+      buildMinified();
+      break;
+    case 'create':
+      createApplication();
+      break;
+    default:
+      showHelp();
+  }
+
 } else {
   showHelp();
 }
