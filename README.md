@@ -18,6 +18,7 @@ Lightweight backbone-based single page application framework.
 
 * [Installation](#hitchinstallation)
 * [Setup](#hitchsetup)
+* [Configuration](#hitchconfiguration)
 * [Packages](#hitchpackages)
   * [Hitch.ACL](#hitchacl)
   * [Hitch.App](#hitchapp)
@@ -35,6 +36,7 @@ Lightweight backbone-based single page application framework.
 npm install backbone-hitch
 ```
 
+
 ## Setup
 
 Change to the directory wherever you want to install Hitch to, or simply create a new one.
@@ -51,6 +53,21 @@ Two folders ('assets' and 'public') will be created in your application folder. 
 ready to use kick-start application.
 
 Point your browser to 'public/index.html' and have a look at your freshly created hitch application.
+
+
+## Configuration
+
+Configuration means to modify your 'hitch.json' file which was created by either yourself or the command line tool when
+you created your application. The hitch.json is divided into several sections which specifies the application structure
+and environment.
+
+##### Modules `module`
+This section defines your application modules
+
+##### Resources `resources`
+This section defines the application resources to be available.
+
+
 
 ## Packages
 
