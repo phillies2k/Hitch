@@ -19,6 +19,15 @@ Lightweight backbone-based single page application framework.
 * [Installation](#hitchinstallation)
 * [Setup](#hitchsetup)
 * [Packages](#hitchpackages)
+  * [Hitch.ACL](#hitchacl)
+  * [Hitch.App](#hitchapp)
+  * [Hitch.Credentials](#hitchcredentials)
+  * [Hitch.Object](#hitchobject)
+  * [Hitch.Resource](#hitchresource)
+  * [Hitch.Role](#hitchrole)
+  * [Hitch.Router](#hitchrouter)
+  * [Hitch.User](#hitchuser)
+  * [Hitch.View](#hitchview)
 
 ## Installation
 
@@ -43,20 +52,6 @@ ready to use kick-start application.
 
 Point your browser to 'public/index.html' and have a look at your freshly created hitch application.
 
-## Extensions
-
-Currently there are two basic extensions that come with Hitch. These serve several stand-alone mechanisms Hitch uses to
-get done with its work and also developers can use to ease up their life.
-
-### Hitch.Cookies
-
-Provides a CRUD-like interface for cookie access.
-
-### Hitch.Helpers
-
-Provides several helper methods that will be mixed in into underscore for being available within the rendering context
-of your views.
-
 ## Packages
 
 * [Hitch.ACL](#hitchacl)
@@ -71,6 +66,15 @@ of your views.
 
 ### Hitch.ACL
 ### Hitch.App
+### Hitch.Helpers
+
+Provides several helper methods that will be mixed in into underscore for being available within the rendering context
+of your views.
+
+### Hitch.Cookies
+
+Provides a CRUD-like interface for cookie access.
+
 ### Hitch.Credentials
 ### Hitch.Object
 ### Hitch.Resource
