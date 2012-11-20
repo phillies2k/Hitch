@@ -84,7 +84,7 @@ function showHelp() {
   console.log('');
   console.log('+---------------------------------------------------------------+');
   console.log('|                      Hitch Console Utils                      |');
-  console.log('|                            v0.0.3                             |');
+  console.log('|                            v0.0.4v                             |');
   console.log('+---------------------------------------------------------------+');
   console.log('');
   console.log('USAGE: hitch [command] [args] (e.g. `hitch create MyApplication`)');

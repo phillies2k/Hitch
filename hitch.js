@@ -26,7 +26,7 @@
   extend = Backbone.Router.extend;
 
   // keep in syn with package.json
-  Hitch.VERSION = '0.0.2';
+  Hitch.VERSION = '0.0.4';
 
   /**
    * Hitch.ACL
