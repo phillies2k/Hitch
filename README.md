@@ -1,15 +1,16 @@
-Hitch
+Hitch v0.0.4
 =====
 
 Lightweight backbone-based single page application framework.
 
 * Default [Hitch.Object](#hitchobject)`s for [users](#hitchuser), [credentials](#hitchcredentials) and [roles](#hitchrole)
-* Use [Hitch.Asset](#hitchasset)`s to provide third party resources, external libs and stylesheets.
-* Full featured [Access Control Layer](#hitchacl) for controlling access to [Hitch.Object](#hitchobject)`s
-* Auto-generate your application bootstrap files using the command-line tool
+* Powerful [Access Control Layer](#hitchacl) for controlling access to [Hitch.Object](#hitchobject)`s
+* Auto-generate your hitch applications using the command-line tool
+* Provides a npm package.json like config for building your application and to keep it up-to-date.
 * Module based app structure based on the amd module pattern
 * Reduces glue code to a minimum
 * Generic view data binding using HTML data-attributes
+* Preloaded resources
 
 ===
 
@@ -27,10 +28,20 @@ npm install backbone-hitch
 
 ## Setup
 
-Create a fresh hitch-application boilerplate.
+Change to the directory wherever you want to install Hitch to, or simply create a new one.
+Then just type in the following:
+
 ```bash
-rake create path/to/my/app
+hitch create
 ```
+
+If the tool will find no hitch.json in the current folder it will prompt you to enter some basic values for your new
+application and will auto-generate a hitch.json with the given information.
+
+Two folders ('assets' and 'public') will be created in your application folder. Within these the tool will create your
+ready to use kick-start application.
+
+Point your browser to 'public/index.html' and have a look at your freshly created hitch application.
 
 ## Extensions
 
@@ -50,7 +61,6 @@ of your views.
 
 * [Hitch.ACL](#hitchacl)
 * [Hitch.App](#hitchapp)
-* [Hitch.Asset](#hitchasset)
 * [Hitch.Credentials](#hitchcredentials)
 * [Hitch.Object](#hitchobject)
 * [Hitch.Resource](#hitchresource)
@@ -61,7 +71,6 @@ of your views.
 
 ### Hitch.ACL
 ### Hitch.App
-### Hitch.Asset
 ### Hitch.Credentials
 ### Hitch.Object
 ### Hitch.Resource
