@@ -1,10 +1,10 @@
 /**
- * Hitch.js - v0.0.2
+ * Hitch.js - v0.0.4
  * Lightweight backbone based single page application framework
  *
  * @author: Philipp Boes <mostgreedy@gmail.com>
  * @copyright: (c) 2012 Philipp Boes
- * @version: 0.0.2
+ * @version: 0.0.4
  *
  */
 (function() {
