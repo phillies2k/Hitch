@@ -32,8 +32,17 @@ Lightweight backbone-based single page application framework.
 
 ## Installation
 
+#### Getting the npm package
+
 ```bash
 npm install backbone-hitch
+```
+
+#### Cloning the repository
+
+```bash
+git clone git@github.com/phillies2k/hitch.git
+cd hitch && npm install
 ```
 
 
