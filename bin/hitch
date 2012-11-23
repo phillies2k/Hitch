@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 /**
  * Hitch Command Line Tool v0.9.3
  * Lightweight backbone based single page application framework
@@ -13,7 +15,6 @@ var exec = require('child_process').exec
   , fs = require('fs')
   , PATH_SELF = __dirname
   , PATH_ROOT = fs.realpathSync(PATH_SELF + '/../')
-  , PATH_BUILD = fs.realpathSync(PATH_ROOT + '/build')
   , _ = require('underscore')
   , inflect = require("inflection")
   , args = _.rest(process.argv, 2)
@@ -39,7 +40,7 @@ _.mixin({ ucFirst: ucFirst });
 
 function createFileFromTemplate(filename, template, data) {
 
-  var filePath = PATH_BUILD + '/data/templates/' + template + '.ejs'
+  var filePath = PATH_SELF + '/data/' + template + '.ejs'
     , contents;
 
   if (exists(filePath)) {
@@ -50,21 +51,8 @@ function createFileFromTemplate(filename, template, data) {
 
 function createApplication(path) {
 
-  var data = parseJSONFile();
-
-  // check configuration
-  if (!_.isObject(data)) {
-    console.log('invalid data argument.');
-    process.exit();
-    return;
-  }
-
-  // check data structure
-  if (!data.name || !data.version) {
-    console.log('invalid hitch configuration.');
-    process.exit();
-    return;
-  }
+  var config
+    , data;
 
   // ensure path
   if (!path) {
@@ -74,10 +62,39 @@ function createApplication(path) {
   // check app dir
   if (!exists(path)) {
     fs.mkdirSync(path, 0755);
+
   }
 
   // change cwd
   exec('cd ' + path);
+
+  // ensure hitch.json
+  if (!exists('hitch.json')) {
+
+    config = { version: '1.0' };
+
+    process.stdin.resume();
+    process.stdin.setEncoding('utf8');
+
+    process.stdout.write("Please enter your application name:");
+    process.stdin.on('data', function (text) {
+      config.name = text;
+    });
+
+    process.exit();
+
+    //createFileFromTemplate(process.cwd() + '/hitch.json', 'hitch.json', config);
+  }
+
+  // read configuration
+  data = parseJSONFile();
+
+  // check configuration
+  if (!data.name || !data.version) {
+    console.log('invalid hitch configuration.');
+    process.exit();
+    return;
+  }
 
   // create the app skeleton
   appSkeleton.forEach(function(p) {

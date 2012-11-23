@@ -1,0 +1,29 @@
+/**
+ * @name <%= name %>
+ * @version <%= version %>
+ *
+ * Application Interface
+ */
+define(function() {
+
+  return Hitch.App.extend({
+
+    pushState: true,
+
+    root: 'body',
+
+    name: '<%= name %>',
+
+    exports: true,
+
+    apiUrl: '<%= apiUrl %>',
+    <% if (typeof baseRoute != 'undefined') { %>
+    baseRoute: '<%= baseRoute %>',
+    <% } %>
+    index: function() {
+      console.log('welcome to your brand new hitch app');
+    }
+
+  });
+
+});

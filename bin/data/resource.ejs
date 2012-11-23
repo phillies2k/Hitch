@@ -1,0 +1,27 @@
+/**
+* @name <%= name %>
+* @version <%= version %>
+*
+* <%= name %>.<%= resource %>
+*/
+define([
+
+  'hitch'
+
+], function(Hitch) {
+
+  var <%= model %> = Hitch.Object.extend({
+
+    // put your model definitions here
+
+  });
+
+  return Hitch.Resource.extend({
+
+    name: '<%= resource %>',
+
+    model: <%= model %>
+
+  });
+
+});

@@ -1,0 +1,94 @@
+/**
+ * @name <%= name %>
+ * @version <%= version %>
+ *
+ * Bootstrap
+ */
+
+requirejs.config({
+
+  paths: {
+    "objectid": "vendor/Objectid",
+    "jquery": "vendor/jquery",
+    "underscore": "vendor/underscore",
+    "backbone": "vendor/backbone",
+    "hitch": "vendor/hitch",
+    "<%= name %>": "app/index"
+  },
+
+  shim: {
+
+    "backbone": {
+      deps: [ 'jquery', 'underscore' ],
+      exports: 'Backbone'
+    },
+
+    "hitch": {
+      deps: [ 'objectid', 'backbone' ],
+      exports: 'Hitch'
+    },
+
+    "<%= name %>": {
+      deps: [ 'hitch' ]
+    }
+
+  }
+
+});
+
+require([
+
+  '<%= [].concat(
+    _.map(resources, function(r, n) { return 'app/resources/' + n; }),
+    _.map(modules, function(r, n) { return 'app/modules/' + n + '/index'; }),
+    name
+  ).join("',\n  '") %>'
+
+], function(<%= _.map(_.keys(resources), function(n) { return _.ucFirst(n); }).join(",\n            ") %>,
+            <%= _.map(_.keys(modules), function(n) { return _.ucFirst(n) + 'Router'; }).join(",\n            ") %>,
+            <%= name %>
+  ) {
+
+  var <%= _.map(_.keys(resources), function(n) { return n + ' = new ' + _.ucFirst(n) + '()'; }).join("\n    , ") %>
+    , app = new <%= name %>();
+  <% _.each(resources, function(resource, n) { %>
+  <%= n %>.on('load', function(s) {
+    var acl = s.getACL();
+    <% _.each(resource.acl, function(p, i) { if (i.indexOf('role:') === 0) { %>
+    acl.setRoleReadAccess('<%= i %>', <%= p.read %>);
+    acl.setRoleWriteAccess('<%= i %>', <%= p.write %>);
+    <% } else if (i === 'PUBLIC') { %>
+    acl.setPublicReadAccess(<%= p.read %>);
+    acl.setPublicWriteAccess(<%= p.write %>);
+    <% }}); %>
+  });
+  <% }); %>
+  app.on('ready', function() {
+  <% _.each(assets, function(a) { %>
+    this.appendAsset('<%= a.type %>', '<%= a.href %>');
+  <%
+    });
+
+    _.each(modules, function(c, n) {
+      var p = n + 'Router'
+        , r = _.ucFirst(p);
+  %>
+    this.<%= p %> = new <%= r %>({
+    <%
+
+      var i = -1
+        , l = _.size(c);
+
+      _.each(c, function(v, k) {
+        ++i;
+        v = ( _.keys(resources).indexOf(v) >= 0 ? 'this.resources.' : '' ) + v;
+      %><%= ( i > 0 ? ",\n      " : "  " ) + k %>: <%= v %><% }); %>
+    });
+  <% }); %>
+    this.run();
+
+  });
+
+  app.load([ <%= _.keys(resources).join(', ') %> ]);
+
+});
