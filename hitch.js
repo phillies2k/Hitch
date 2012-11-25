@@ -1007,40 +1007,43 @@
       length = resources.length;
       this.resources = {};
 
-      _.each(resources, function(resource) {
+      if (!length) {
+        this.trigger('ready', this.resources);
+      } else {
+        _.each(resources, function(resource) {
 
-        if (_.isFunction(resource)) {
-          resource = new resource();
-        }
+          if (_.isFunction(resource)) {
+            resource = new resource();
+          }
 
-        if (!resource.name) {
-          resource.name = _.uniqueId('r');
-        }
+          if (!resource.name) {
+            resource.name = _.uniqueId('r');
+          }
 
-        if (this.apiUrl) {
-          resource.url = [ this.apiUrl, resource.name ].join('/');
-        }
+          if (this.apiUrl) {
+            resource.url = [ this.apiUrl, resource.name ].join('/');
+          }
 
-        resource.fetch({
-          success: _.bind(function() {
-            this.resources[resource.name] = resource;
-            resource.trigger('load', resource);
-            if (++loaded === length) {
-              this.trigger('ready', this.resources);
-            }
-          }, this)
-        });
+          resource.fetch({
+            success: _.bind(function() {
+              this.resources[resource.name] = resource;
+              resource.trigger('load', resource);
+              if (++loaded === length) {
+                this.trigger('ready', this.resources);
+              }
+            }, this)
+          });
 
-      }, this);
-
+        }, this);
+      }
     },
 
     /**
      * Launches the application
      */
-    run: function() {
+    run: function(options) {
 
-      Backbone.history.start({ pushState: this.pushState });
+      Backbone.history.start(_.extend({ pushState: this.pushState }, options));
 
       if (this.exports) {
         var globalName = _.isString(this.exports) ? this.exports : this.name;
