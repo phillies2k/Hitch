@@ -1,6 +1,6 @@
 {
   "name": "backbone-hitch",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Lightweight framework built on top of backbone",
   "author": "Philipp Boes <mostgreedy@gmail.com> (https://github.com/phillies2k)",
   "keywords": [

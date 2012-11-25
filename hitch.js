@@ -1,10 +1,10 @@
 /**
- * Hitch.js - v0.0.4
+ * Hitch.js - v0.0.5
  * Lightweight backbone based single page application framework
  *
  * @author: Philipp Boes <mostgreedy@gmail.com>
  * @copyright: (c) 2012 Philipp Boes
- * @version: 0.0.4
+ * @version: 0.0.5
  *
  */
 (function() {
@@ -26,7 +26,7 @@
   extend = Backbone.Router.extend;
 
   // keep in syn with package.json
-  Hitch.VERSION = '0.0.4';
+  Hitch.VERSION = '0.0.5';
 
   /**
    * Hitch.ACL

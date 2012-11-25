@@ -38,19 +38,20 @@ requirejs.config({
 
 require([
 
-  '<%= [].concat(
+  '<%= _.compact([].concat(
     _.map(resources, function(r, n) { return 'app/resources/' + n; }),
     _.map(modules, function(r, n) { return 'app/modules/' + n + '/index'; }),
     name
-  ).join("',\n  '") %>'
+  )).join("',\n  '") %>'
 
-], function(<%= _.map(_.keys(resources), function(n) { return _.ucFirst(n); }).join(",\n            ") %>,
-            <%= _.map(_.keys(modules), function(n) { return _.ucFirst(n) + 'Router'; }).join(",\n            ") %>,
-            <%= name %>
-  ) {
+], function(<%= _.compact([].concat(
+  _.map(_.keys(resources), function(n) { return ucFirst(n); }).join(",\n            "),
+  _.map(_.keys(modules), function(n) { return ucFirst(n) + 'Router'; }).join(",\n            "),
+  name
+  )).join(",\n      ") %>
+) {
 
-  var <%= _.map(_.keys(resources), function(n) { return n + ' = new ' + _.ucFirst(n) + '()'; }).join("\n    , ") %>
-    , app = new <%= name %>();
+  var <%= _.compact([].concat(_.map(_.keys(resources), function(n) { return n + ' = new ' + ucFirst(n) + '()'; }), 'app = new ' + name + '()')).join("\n    , ") %>;
   <% _.each(resources, function(resource, n) { %>
   <%= n %>.on('load', function(s) {
     var acl = s.getACL();
@@ -69,24 +70,23 @@ require([
   <%
     });
 
-    _.each(modules, function(c, n) {
-      var p = n + 'Router'
-        , r = _.ucFirst(p);
-  %>
+      _.each(modules, function(c, n) {
+        var p = n + 'Router'
+        , r = ucFirst(p);
+        %>
     this.<%= p %> = new <%= r %>({
-    <%
+        <%
 
-      var i = -1
+        var i = -1
         , l = _.size(c);
 
-      _.each(c, function(v, k) {
-        ++i;
-        v = ( _.keys(resources).indexOf(v) >= 0 ? 'this.resources.' : '' ) + v;
-      %><%= ( i > 0 ? ",\n      " : "  " ) + k %>: <%= v %><% }); %>
-    });
-  <% }); %>
+        _.each(c, function(v, k) {
+          ++i;
+          v = ( _.keys(resources).indexOf(v) >= 0 ? 'this.resources.' : '' ) + v;
+          %><%= ( i > 0 ? ",\n      " : "  " ) + k %>: <%= v %><% }); %>
+      });
+        <% }); %>
     this.run();
-
   });
 
   app.load([ <%= _.keys(resources).join(', ') %> ]);

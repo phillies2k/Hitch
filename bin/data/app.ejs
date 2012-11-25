@@ -8,7 +8,7 @@ define(function() {
 
   return Hitch.App.extend({
 
-    pushState: true,
+    pushState: <%= pushState ? 'true' : 'false' %>,
 
     root: 'body',
 
