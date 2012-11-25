@@ -19,7 +19,7 @@ Lightweight backbone-based single page application framework.
 * [Installation](#hitchinstallation)
 * [Setup](#hitchsetup)
 * [Configuration](#hitchconfiguration)
-* [Using the Command-Line Tool](#hitchusing-the-command-line-tool)
+* [Using the Command-Line Tool](#using-the-command-line-tool)
 * [Packages](#hitchpackages)
   * [Hitch.ACL](#hitchacl)
   * [Hitch.App](#hitchapp)
