@@ -16,20 +16,20 @@ Lightweight backbone-based single page application framework.
 
 ## Table of Contents:
 
-* [Installation](#hitchinstallation)
-* [Setup](#hitchsetup)
-* [Configuration](#hitchconfiguration)
+* [Installation](#installation)
+* [Setup](#setup)
+* [Configuration](#configuration)
 * [Using the Command-Line Tool](#using-the-command-line-tool)
-* [Packages](#hitchpackages)
-  * [Hitch.ACL](#hitchacl)
-  * [Hitch.App](#hitchapp)
-  * [Hitch.Credentials](#hitchcredentials)
-  * [Hitch.Object](#hitchobject)
-  * [Hitch.Resource](#hitchresource)
-  * [Hitch.Role](#hitchrole)
-  * [Hitch.Router](#hitchrouter)
-  * [Hitch.User](#hitchuser)
-  * [Hitch.View](#hitchview)
+* [Packages](#packages)
+  * [Hitch.ACL](#acl)
+  * [Hitch.App](#app)
+  * [Hitch.Credentials](#credentials)
+  * [Hitch.Object](#object)
+  * [Hitch.Resource](#resource)
+  * [Hitch.Role](#role)
+  * [Hitch.Router](#router)
+  * [Hitch.User](#user)
+  * [Hitch.View](#view)
 
 ## Installation
 
