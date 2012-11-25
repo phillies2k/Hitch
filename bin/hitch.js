@@ -70,12 +70,12 @@ function showHelp() {
   console.log('');
   console.log('+---------------------------------------------------------------+');
   console.log('|                      Hitch Console Utils                      |');
-  console.log('|                            v0.9.2                             |');
+  console.log('|                            v1.0.0                             |');
   console.log('+---------------------------------------------------------------+');
   console.log('');
   console.log('USAGE: hitch [command] [args] (e.g. `hitch create MyApplication`)');
   console.log('');
-  console.log('- build', '                ', 'build project dependencies');
+  console.log('- build [target]', '       ', 'build project dependencies');
   console.log('- create [path]', '        ', 'creates a fresh hitch application');
   console.log('- help', '                 ', 'shows this information');
   console.log('');
@@ -151,10 +151,10 @@ function createApplication(path) {
   createFileFromTemplate(path + '/public/index.html', 'index', data);
 
   // build
-  build(path);
+  buildTarget('all', path);
 }
 
-function build(path) {
+function buildTarget(target, path) {
 
   var data;
 
@@ -165,24 +165,48 @@ function build(path) {
     throw new Error("invalid location. no hitch.json found in path");
   }
 
-  // generate modules
-  if (_.size(data.modules)) {
+  switch (target) {
+
+    case 'modules':
+      generateModules(path, data);
+      break;
+    case 'resources':
+      generateResources(path, data);
+      break;
+    case 'main':
+      generateBootstrap(path, data);
+      break;
+    case 'all':
+      generateModules(path, data);
+      generateResources(path, data);
+      generateBootstrap(path, data);
+      break;
+    default:
+      throw new Error("invalid build target. Use one of modules,resources,main,all.");
+  }
+
+}
+
+function generateModules(path, data) {
+  if (data && _.size(data.modules)) {
     _.each(data.modules, function(module, name) {
       generateModule(path, name, data);
     });
   }
+}
 
-  // generate resources
-  if (_.size(data.resources)) {
+function generateResources(path, data) {
+  if (data && _.size(data.resources)) {
     _.each(data.resources, function(resource, name) {
       generateResource(path, name, data);
     });
   }
-
-  // generate bootstrap
-  createFileFromTemplate(path + '/public/js/main.js', 'main', data);
 }
 
+function generateBootstrap(path, data) {
+  fs.unlinkFile(path + '/public/js/main.js');
+  createFileFromTemplate(path + '/public/js/main.js', 'main', data);
+}
 
 function generateResource(path, name, data) {
 
