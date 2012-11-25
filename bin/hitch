@@ -281,7 +281,7 @@ function parseJSONFile(file) {
 
 var cli = new ConsoleUtils();
 
-cli.pushCommand(new ConsoleUtils.Command('build'), build);
+cli.pushCommand(new ConsoleUtils.Command('build'), buildTarget);
 cli.pushCommand(new ConsoleUtils.Command('create'), createApplication);
 cli.pushCommand(new ConsoleUtils.Command('help'), showHelp);
 cli.run();
