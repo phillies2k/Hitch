@@ -48,8 +48,7 @@ cd hitch && npm install
 
 ## Setup
 
-Change to the directory wherever you want to install Hitch to, or simply create a new one.
-Then just type in the following:
+Simply type in the following:
 
 ```bash
 hitch create [path]
