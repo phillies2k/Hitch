@@ -8,7 +8,6 @@
 requirejs.config({
 
   paths: {
-    "objectid": "vendor/Objectid",
     "jquery": "vendor/jquery",
     "underscore": "vendor/underscore",
     "backbone": "vendor/backbone",
@@ -24,7 +23,7 @@ requirejs.config({
     },
 
     "hitch": {
-      deps: [ 'objectid', 'backbone' ],
+      deps: [ 'backbone' ],
       exports: 'Hitch'
     },
 
