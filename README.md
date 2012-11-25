@@ -19,6 +19,7 @@ Lightweight backbone-based single page application framework.
 * [Installation](#hitchinstallation)
 * [Setup](#hitchsetup)
 * [Configuration](#hitchconfiguration)
+* [Using the Command-Line Tool](#hitch)
 * [Packages](#hitchpackages)
   * [Hitch.ACL](#hitchacl)
   * [Hitch.App](#hitchapp)
@@ -78,6 +79,22 @@ This section defines your application modules
 
 ##### Resources `resources`
 This section defines the application resources to be available.
+
+
+
+## Using the Command-Line Tool
+
+##### The `build` command
+
+```bash
+hitch build [target]
+```
+
+your build target can either be empty ( will execute all building tasks ) or one of the following tasks:
+* `resources` - will create non existing resources
+* `modules` - will initialize non existing modules
+* `main` - will rebuild your bootstrap file. This is necessary to call after every update to resources or modules to
+  ensure everything will be loaded.
 
 
 
