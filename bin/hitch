@@ -140,7 +140,10 @@ function createApplication(path) {
   });
 
   // copy dependencies
-  exec('rsync -av ' + PATH_ROOT + '/vendor/* ' + path + '/public/js/vendor');
+  exec('cp ' + PATH_ROOT + '/node_modules/backbone/backbone.js ' + path + '/public/js/vendor/backbone.js');
+  exec('cp ' + PATH_ROOT + '/node_modules/underscore/underscore.js ' + path + '/public/js/vendor/underscore.js');
+  exec('cp ' + PATH_ROOT + '/node_modules/requirejs/require.js ' + path + '/public/js/vendor/require.js');
+  exec('cp ' + PATH_ROOT + '/node_modules/jquery/tmp/jquery.js ' + path + '/public/js/vendor/jquery.js');
   exec('cp ' + PATH_ROOT + '/hitch.js ' + path + '/public/js/vendor/hitch.js');
 
   // generate mandatory files

@@ -1,10 +1,10 @@
 /**
- * Hitch.js - v0.0.5
+ * Hitch.js - v0.0.6
  * Lightweight backbone based single page application framework
  *
  * @author: Philipp Boes <mostgreedy@gmail.com>
  * @copyright: (c) 2012 Philipp Boes
- * @version: 0.0.5
+ * @version: 0.0.6
  *
  */
 (function() {
@@ -13,20 +13,18 @@
   var root = this
     , Backbone = root.Backbone
     , _ = root._
-    , ObjectId = root.ObjectId
     , Hitch = root.Hitch = {}
     , extend;
 
   // check dependencies
   if (!_) throw new Error("Hitch requires underscore.");
   if (!Backbone) throw new Error("Hitch requires backbone.");
-  if (!ObjectId) throw new Error("Hitch requires ObjectId.");
 
   // cache extend
   extend = Backbone.Router.extend;
 
   // keep in syn with package.json
-  Hitch.VERSION = '0.0.5';
+  Hitch.VERSION = '0.0.6';
 
   /**
    * Hitch.ACL
@@ -1165,10 +1163,6 @@
   };
 
   Hitch.Helpers = {
-
-    createdAt: function(id) {
-      return new ObjectId(id).getDate();
-    },
 
     formField: function(model, attr, options) {
 
