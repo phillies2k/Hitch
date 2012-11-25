@@ -289,7 +289,8 @@
 
       _.each(this.relations, function(constructor, name) {
 
-        var related = this[name];
+        var related = this[name]
+          , data;
 
         if (!related) {
           if (attrs[name] && (attrs[name] instanceof Backbone.Model || attrs[name] instanceof Backbone.Collection)) {
@@ -300,12 +301,17 @@
         }
 
         if (attrs[name]) {
+
           if (attrs[name] instanceof Backbone.Model || attrs[name] instanceof Backbone.Collection) {
-            attrs[name] = attrs[name].toJSON();
+            data = attrs[name].toJSON();
           } else {
-            related[ related instanceof Backbone.Collection ? 'reset' : 'set' ](attrs[name], options);
+            data = attrs[name];
           }
+
+          related[ related instanceof Backbone.Collection ? 'reset' : 'set' ](data, options);
+          attrs[name] = related.toJSON();
         }
+
 
       }, this);
 
