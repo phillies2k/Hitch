@@ -204,8 +204,9 @@ function generateResources(path, data) {
 }
 
 function generateBootstrap(path, data) {
-  fs.unlinkFile(path + '/public/js/main.js');
-  createFileFromTemplate(path + '/public/js/main.js', 'main', data);
+  var file = path + '/public/js/main.js';
+  if (exists(file)) fs.unlinkSync(file);
+  createFileFromTemplate(file, 'main', data);
 }
 
 function generateResource(path, name, data) {
