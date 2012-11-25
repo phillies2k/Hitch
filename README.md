@@ -52,7 +52,7 @@ Change to the directory wherever you want to install Hitch to, or simply create 
 Then just type in the following:
 
 ```bash
-hitch create
+hitch create [path]
 ```
 
 If the tool will find no hitch.json in the current folder it will prompt you to enter some basic values for your new
@@ -61,7 +61,11 @@ application and will auto-generate a hitch.json with the given information.
 Two folders ('assets' and 'public') will be created in your application folder. Within these the tool will create your
 ready to use kick-start application.
 
-Point your browser to 'public/index.html' and have a look at your freshly created hitch application.
+There are two ways to get your app working:
+Either you can configure a vhost for the public directory of your application or go to your "app/index.js" file and
+set the root property to your web-root pointing to your application's public directory.
+Point your browser to <our application and have a look at your freshly created hitch application.
+
 
 
 ## Configuration
