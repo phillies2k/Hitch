@@ -1,4 +1,4 @@
-Hitch v0.0.6
+Hitch v0.0.7
 =====
 
 Lightweight backbone-based single page application framework.
@@ -93,6 +93,8 @@ hitch build [target]
 your build target can either be empty ( will execute all building tasks ) or one of the following tasks:
 * `resources` - will create non existing resources
 * `modules` - will initialize non existing modules
+* `app` - will rebuild your application index (use with care)
+* `index` will rebuild your `public/index.html` (use with care)
 * `main` - will rebuild your bootstrap file. This is necessary to call after every update to resources or modules to
   ensure everything will be loaded.
 
