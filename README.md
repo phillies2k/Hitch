@@ -74,12 +74,14 @@ Configuration means to modify your 'hitch.json' file which was created by either
 you created your application. The hitch.json is divided into several sections which specifies the application structure
 and environment.
 
+##### Assets `assets`
+This section defines the application assets to be used.
+
 ##### Modules `module`
 This section defines your application modules
 
 ##### Resources `resources`
 This section defines the application resources to be available.
-
 
 
 ## Using the Command-Line Tool
