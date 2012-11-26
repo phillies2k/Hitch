@@ -1161,13 +1161,32 @@
     }
   };
 
+  /**
+   * Hitch.Cookies
+   * @type {Object}
+   */
   Hitch.Cookies = {
 
-    get: function (sKey) {
-      if (!sKey || !this.has(sKey)) { return null; }
-      return unescape(document.cookie.replace(new RegExp("(?:^|.*;\\s*)" + escape(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*((?:[^;](?!;))*[^;]?).*"), "$1"));
+    /**
+     * Return the cookie value for the given name
+     * @param name
+     * @return {*}
+     */
+    get: function (name) {
+      if (!name || !this.has(name)) { return null; }
+      return unescape(document.cookie.replace(new RegExp("(?:^|.*;\\s*)" + escape(name).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*((?:[^;](?!;))*[^;]?).*"), "$1"));
     },
 
+
+    /**
+     * Creates a cookie
+     * @param name
+     * @param value
+     * @param expires
+     * @param path
+     * @param domain
+     * @param secure
+     */
     set: function(name, value, expires, path, domain, secure) {
       var cookie = {};
 
@@ -1198,15 +1217,27 @@
       })).join(';');
     },
 
+    /**
+     * Deletes a cookie by its name and optional path
+     * @param name
+     * @param path
+     */
     clear: function (name, path) {
       if (!name || !this.has(name)) return;
       document.cookie = escape(name) + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT" + (path ? "; path=" + path : "");
     },
 
+    /**
+     * Checks if a cookie with given name was set
+     * @param name
+     */
     has: function (name) {
       return _.indexOf(this.names(), name) !== -1;
     },
 
+    /**
+     * Returns the list of cookie names
+     */
     names: function () {
       return _.map(document.cookie
         .replace(/((?:^|\s*;)[^\=]+)(?=;|$)|^\s*|\s*(?:\=[^;]*)?(?:\1|$)/g, "")
@@ -1217,8 +1248,18 @@
     }
   };
 
+  /**
+   * Hitch.Helpers
+   * @type {Object}
+   */
   Hitch.Helpers = {
 
+    /**
+     * Creates a labeled and edittable form field for given model and attribute.
+     * @param model
+     * @param attr
+     * @param options
+     */
     formField: function(model, attr, options) {
 
       function onFocus(e) {
@@ -1292,15 +1333,31 @@
         _.tagFor('dd', _.tagFor(tagName, attrs, options.text && curr));
     },
 
+    /**
+     * Waits until given element or selector was found in the dom and then calls callback
+     * @param el
+     * @param callback
+     */
     inDom: function(el, callback) {
-      var timer, to;
-      (timer = function() {
-        if (!$(el).length) return to = setTimeout(timer, 20);
+
+      var attempts = 0
+        , to;
+
+      (function timer() {
+        if (++attempts > 1000) return;
+        if (!$(el).length) return to = setTimeout(timer, 0);
         if (to) clearTimeout(to);
         callback();
       })();
+
     },
 
+    /**
+     * Creates a html tag
+     * @param tagName
+     * @param attrs
+     * @param content
+     */
     tagFor: function(tagName, attrs, content) {
 
       var _noClosingTags = 'link input meta'.split(' ')
@@ -1335,7 +1392,7 @@
   // mixin helpers
   _.mixin(Hitch.Helpers);
 
-  // ensure Backbone.history
+  // ensure history is present
   Backbone.history = Backbone.history || new Backbone.History();
 
 }).call(this);
