@@ -75,16 +75,26 @@ function showHelp() {
   console.log('');
   console.log('USAGE: hitch [command] [args] (e.g. `hitch create MyApplication`)');
   console.log('');
-  console.log('- build [target]', '       ', 'build project dependencies');
-  console.log('- create [path]', '        ', 'creates a fresh hitch application');
-  console.log('- help', '                 ', 'shows this information');
+  console.log('- create                       creates project targets.');
+  console.log('         module [name]         creates a new module');
+  console.log('         resource [name]       creates a new resource');
+  console.log('         [name]                creates a new hitch application');
+  console.log('');
+  console.log('- build [target]               builds/rebuilds project targets.');
+  console.log('                               target can be one of: resources, modules, index, app, main, all');
+  console.log('');
+  console.log('- remove [target]              removes project targets');
+  console.log('                               target can be one of: resources, modules, index, app, main, all');
+  console.log('');
+  console.log('- help                         shows this information');
   console.log('');
 
 }
 
 function createApplication(path) {
 
-  var data, appName;
+  var appName
+    , data;
 
   // ensure path
   if (!path) {
@@ -146,10 +156,6 @@ function createApplication(path) {
   exec('cp ' + PATH_ROOT + '/node_modules/jquery/tmp/jquery.js ' + path + '/public/js/vendor/jquery.js');
   exec('cp ' + PATH_ROOT + '/hitch.js ' + path + '/public/js/vendor/hitch.js');
 
-  // generate mandatory files
-  createFileFromTemplate(path + '/public/js/app/index.js', 'app', data);
-  createFileFromTemplate(path + '/public/index.html', 'index', data);
-
   // build
   buildTarget('all', path);
 }
@@ -157,6 +163,10 @@ function createApplication(path) {
 function buildTarget(target, path) {
 
   var data;
+
+  if (!target) {
+    target = 'all';
+  }
 
   path = path || process.cwd();
   data = parseJSONFile(path + '/hitch.json');
@@ -176,15 +186,45 @@ function buildTarget(target, path) {
     case 'main':
       generateBootstrap(path, data);
       break;
+    case 'index':
+      generateIndexHtml(path, data);
+      break;
+    case 'app':
+      generateMainIndex(path, data);
+      break;
     case 'all':
       generateModules(path, data);
       generateResources(path, data);
       generateBootstrap(path, data);
+      generateIndexHtml(path, data);
+      generateMainIndex(path, data);
       break;
     default:
-      throw new Error("invalid build target. Use one of modules,resources,main,all.");
+      throw new Error("invalid build target. Use one of modules,resources,index,app,main,all.");
   }
 
+}
+
+function createTarget(target) {
+
+  var path = process.cwd()
+    , args = _.rest(arguments)
+    , data = parseJSONFile(path + '/hitch.json');
+
+  if (!target) {
+    throw new Error("invalid target");
+  }
+
+  switch (target) {
+    case 'module':
+      generateModule(path, args[0], data);
+      break;
+    case 'resource':
+      generateResource(path, args[0], data);
+      break;
+    default:
+      createApplication(target);
+  }
 }
 
 function generateModules(path, data) {
@@ -209,12 +249,27 @@ function generateBootstrap(path, data) {
   createFileFromTemplate(file, 'main', data);
 }
 
+function generateIndexHtml(path, data) {
+  var file = path + '/public/index.html';
+  if (exists(file)) fs.unlinkSync(file);
+  data.root = data.root.charAt(data.root.length-1) !== '/' ? data.root + '/' : data.root;
+  createFileFromTemplate(file, 'index', data);
+}
+
+function generateMainIndex(path, data) {
+  var file = path + '/public/js/app/index.js';
+  if (exists(file)) fs.unlinkSync(file);
+
+  if (data.pushState === true) {
+    exec('cp ' + PATH_SELF + '/data/.htaccess ' + path + '/public/.htaccess');
+  }
+
+  createFileFromTemplate(file, 'app', data);
+}
+
 function generateResource(path, name, data) {
-
   var resourceFile = path + '/public/js/app/resources/' + name + '.js';
-
   if (!exists(resourceFile)) {
-
     createFileFromTemplate(resourceFile, 'resource', _.extend({
       resource: name,
       model: inflect.classify(name)
@@ -275,14 +330,24 @@ function exists(name) {
 }
 
 function parseJSONFile(file) {
+  var contents;
   if (exists(file)) {
-    return JSON.parse(fs.readFileSync(file));
+    contents = JSON.parse(fs.readFileSync(file));
+    _.each(contents, function(val, key) {
+      contents[key] = val === 'true' ? true : val === 'false' ? false : val;
+    });
   }
+  return contents;
+}
+
+function removeTarget(target) {
+  console.log('not implemented yet.');
 }
 
 var cli = new ConsoleUtils();
 
 cli.pushCommand(new ConsoleUtils.Command('build'), buildTarget);
-cli.pushCommand(new ConsoleUtils.Command('create'), createApplication);
+cli.pushCommand(new ConsoleUtils.Command('create'), createTarget);
+cli.pushCommand(new ConsoleUtils.Command('remove'), removeTarget);
 cli.pushCommand(new ConsoleUtils.Command('help'), showHelp);
 cli.run();

@@ -47,11 +47,11 @@ require([
   _.map(_.keys(resources), function(n) { return ucFirst(n); }).join(",\n            "),
   _.map(_.keys(modules), function(n) { return ucFirst(n) + 'Router'; }).join(",\n            "),
   name
-  )).join(",\n      ") %>
+  )).join(",\n            ") %>
 ) {
 
   var <%= _.compact([].concat(_.map(_.keys(resources), function(n) { return n + ' = new ' + ucFirst(n) + '()'; }), 'app = new ' + name + '()')).join("\n    , ") %>;
-  <% _.each(resources, function(resource, n) { %>
+  <% _.each(resources, function(resource, n) { if (!resource.acl) { return; } %>
   <%= n %>.on('load', function(s) {
     var acl = s.getACL();
     <% _.each(resource.acl, function(p, i) { if (i.indexOf('role:') === 0) { %>
@@ -65,27 +65,30 @@ require([
   <% }); %>
   app.on('ready', function() {
   <% _.each(assets, function(a) { %>
-    this.appendAsset('<%= a.type %>', '<%= a.href %>');
+    this.appendAsset('<%= a.type %>', '<%= a.path %>');
   <%
+
     });
 
-      _.each(modules, function(c, n) {
-        var p = n + 'Router'
-        , r = ucFirst(p);
-        %>
+    _.each(modules, function(c, n) {
+      var p = n + 'Router'
+      , r = ucFirst(p);
+
+  %>
     this.<%= p %> = new <%= r %>({
-        <%
+      currentUser: this.getCurrentUser()<%
 
-        var i = -1
-        , l = _.size(c);
+    var i = -1
+      , l = _.size(c);
 
-        _.each(c, function(v, k) {
-          ++i;
-          v = ( _.keys(resources).indexOf(v) >= 0 ? 'this.resources.' : '' ) + v;
-          %><%= ( i > 0 ? ",\n      " : "  " ) + k %>: <%= v %><% }); %>
-      });
-        <% }); %>
-    this.run({ root: '<%= root %>' });
+    _.each(c, function(v, k) {
+      ++i;
+      v = ( _.keys(resources).indexOf(v) >= 0 ? 'this.resources.' : '' ) + v;
+
+  %><%= ",\n      " + k %>: <%= v %><% }); %>
+    });
+  <% }); %>
+    this.run({ pushState: <%= pushState ? 'true' : 'false' %>, root: '<%= root %>' });
   });
 
   app.load([ <%= _.keys(resources).join(', ') %> ]);
