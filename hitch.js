@@ -670,7 +670,7 @@
       }
 
       return this.currentUser;
-    }
+    },
 
     /**
      * Adds an after filter
@@ -910,9 +910,6 @@
     if (!_.isRegExp(this.baseRoute)) {
       this.baseRoute = Backbone.Router.prototype._routeToRegExp(this.baseRoute);
     }
-
-    // ensure Backbone.history
-    Backbone.history = Backbone.history || new Backbone.History();
 
     // setup the error route
     Backbone.history.route(/^(.+?)$/, _.bind(function(fragment) {
@@ -1335,6 +1332,10 @@
     }
   };
 
+  // mixin helpers
   _.mixin(Hitch.Helpers);
+
+  // ensure Backbone.history
+  Backbone.history = Backbone.history || new Backbone.History();
 
 }).call(this);
