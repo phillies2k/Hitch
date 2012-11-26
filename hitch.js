@@ -1,10 +1,10 @@
 /**
- * Hitch.js - v0.0.6
+ * Hitch.js - v0.0.7
  * Lightweight backbone based single page application framework
  *
  * @author: Philipp Boes <mostgreedy@gmail.com>
  * @copyright: (c) 2012 Philipp Boes
- * @version: 0.0.6
+ * @version: 0.0.7
  *
  */
 (function() {
@@ -24,7 +24,7 @@
   extend = Backbone.Router.extend;
 
   // keep in syn with package.json
-  Hitch.VERSION = '0.0.6';
+  Hitch.VERSION = '0.0.7';
 
   /**
    * Hitch.ACL
@@ -623,11 +623,15 @@
     options = options || {};
 
     // inject options
+    this.currentUser = options.currentUser;
     if (options.resource) this.resource = options.resource;
     if (options.routes) this.routes = options.routes;
 
-    // create an acl
-    this.acl = new Hitch.ACL(this);
+    // setup current session user
+    var currentUser = this.getCurrentUser(options.currentUser);
+
+    // create an acl instance for this router to manage route access
+    this.acl = new Hitch.ACL(currentUser);
 
     // bind filters
     this._bindFilters();
@@ -654,6 +658,19 @@
 
     // route filters
     _filters: {},
+
+    getCurrentUser: function(currentUser) {
+
+      if (!this.currentUser) {
+        if (currentUser instanceof Hitch.User) {
+          this.currentUser = currentUser;
+        } else {
+          this.currentUser = new Hitch.User();
+        }
+      }
+
+      return this.currentUser;
+    }
 
     /**
      * Adds an after filter
@@ -708,6 +725,7 @@
         }
 
       }, this));
+
       return this;
     },
 
@@ -912,23 +930,11 @@
       Backbone.history.trigger('route', this, 'index', args);
     }, this));
 
-    // enable pushState style
-    if (this.pushState) {
-      // filter internal links and map them to backbone history
-      $('a[href]').live('click', function(e) {
-        var href = $(this).attr('href');
-        if (!$(this).attr('target') && !/^(http\:\/\/|www\.)/.test(href)) {
-          e.preventDefault();
-          Backbone.history.navigate(href, true);
-        }
-      });
-    }
-
     // apply the ready state callback (when all resources are fetched successfully)
     this.on('ready', this.ready, this);
 
     // call initialize
-    this.initialize.call(this, _.toArray(arguments));
+    this.initialize.apply(this, arguments);
   };
 
   // make it extendable
@@ -943,10 +949,7 @@
     baseRoute: /^$/,
 
     // the base api url
-    apiUrl: '',
-
-    // enables pushState support
-    pushState: false,
+    apiUrl: '/',
 
     // exports the application public interface to the global object (window or globals)
     exports: false,
@@ -983,6 +986,47 @@
     getPublicInterface: function() {
       var publicInterfaceMethodNames = _.filter(_.keys(this), function(key) { return key.charAt(0) !== '_'; })
       return _.pick(this, publicInterfaceMethodNames);
+    },
+
+    /**
+     * Returns the current session user
+     * @return {Hitch.User}
+     */
+    getCurrentUser: function() {
+
+      if (!this.currentUser) {
+
+        var cookie = Hitch.Cookies.get('hitch-user')
+          , self = this
+          , user;
+
+        if (cookie) {
+
+          user = new Hitch.User(cookie);
+          user.fetch({
+
+            success: function(data) {
+              user.set(data);
+              self.currentUser = user;
+            },
+
+            error: function() {
+              Hitch.Cookies.clear('hitch-user');
+              user = new Hitch.User({ role: { name: 'visitor' } });
+              Hitch.Cookies.set('hitch-user', user.id);
+            }
+
+          });
+
+        } else {
+          user = new Hitch.User({ role: { name: 'visitor' } });
+          Hitch.Cookies.set('hitch-user', user.id);
+        }
+
+        this.currentUser = user;
+      }
+
+      return this.currentUser;
     },
 
     /**
@@ -1050,7 +1094,18 @@
      */
     run: function(options) {
 
-      Backbone.history.start(_.extend({ pushState: this.pushState }, options));
+      Backbone.history.start(options);
+
+      if (options.pushState) {
+        // map dom links to backbone history
+        $('a[href]').live('click', function(e) {
+          var href = $(this).attr('href');
+          if (!$(this).attr('target') && !/^(http\:\/\/|www\.)/.test(href)) {
+            e.preventDefault();
+            Backbone.history.navigate(href, true);
+          }
+        });
+      }
 
       if (this.exports) {
         var globalName = _.isString(this.exports) ? this.exports : this.name;
