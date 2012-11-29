@@ -10,6 +10,7 @@
     , a, b, c, d
     , router;
 
+
   /**
    * @module: Hitch.ACL
    * @TODO implement tests
@@ -63,6 +64,32 @@
     ok(c.getACL() instanceof Hitch.ACL, 'an acl instance is returned for this resource');
     ok(a.c.getACL() instanceof Hitch.ACL, 'an acl instance is returned from a related resource');
 
+  });
+
+  test('ACL Unit Tests', function() {
+
+    var acl = a.getACL()
+      , usr = new Hitch.User({ _id: 1 });
+
+
+    equal(acl._determineUserId(usr), 1);
+
+    acl.setPublicReadAccess(true);
+    deepEqual(acl.getPublicReadAccess(), true);
+
+    acl.setPublicWriteAccess(true);
+    deepEqual(acl.getPublicWriteAccess(), true);
+
+    acl.setRoleReadAccess(usr.role, true);
+    deepEqual(acl.getRoleReadAccess(usr.role), true);
+
+    acl.setReadAccess(usr, true);
+    deepEqual(acl.getReadAccess(usr), true);
+
+    acl.getWriteAccess(usr, true);
+    deepEqual(acl.getReadAccess(usr), true);
+
+    deepEqual(acl.toJSON(), acl.permissions);
   });
 
   module('Hitch.Resource');

@@ -41,7 +41,7 @@
     getACL: function() {
 
       if (!this.acl) {
-        this.acl = new Hitch.ACL(this);
+        this.acl = new Hitch.ACL();
       }
 
       return this.acl
@@ -135,8 +135,15 @@
       userId = this._determineUserId(userId);
       permissions = this.permissions[userId];
 
-      return permissions && permissions[accessType];
+      if (!permissions) {
+        return false;
+      }
 
+      if (!permissions[accessType]) {
+        return false;
+      };
+
+      return permissions[accessType];
     },
 
     /**
