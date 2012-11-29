@@ -1,4 +1,4 @@
-Hitch v0.0.7
+Hitch v0.0.8
 =====
 
 Lightweight backbone-based single page application framework.

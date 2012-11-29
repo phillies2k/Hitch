@@ -1,10 +1,10 @@
 /**
- * Hitch.js - v0.0.7
+ * Hitch.js - v0.0.8
  * Lightweight backbone based single page application framework
  *
  * @author: Philipp Boes <mostgreedy@gmail.com>
  * @copyright: (c) 2012 Philipp Boes
- * @version: 0.0.7
+ * @version: 0.0.8
  *
  */
 (function() {
@@ -24,7 +24,42 @@
   extend = Backbone.Router.extend;
 
   // keep in syn with package.json
-  Hitch.VERSION = '0.0.7';
+  Hitch.VERSION = '0.0.8';
+
+  /**
+   * Hitch.Access Mixin
+   * @type {Object}
+   */
+  Hitch.Access = {
+
+    acl: null,
+
+    /**
+     * Returns the acl instance for this object
+     * @return {*}
+     */
+    getACL: function() {
+
+      if (!this.acl) {
+        this.acl = new Hitch.ACL(this);
+      }
+
+      return this.acl
+    },
+
+    /**
+     * Sets the ACL instance for this object
+     * @param acl
+     */
+    setACL: function(acl) {
+
+      if (!acl instanceof Hitch.ACL) {
+        throw new Error("acl must be an instance of Hitch.ACL");
+      }
+
+      this.acl = acl;
+    }
+  };
 
   /**
    * Hitch.ACL
@@ -252,7 +287,7 @@
    * Hitch.Credentials
    * @extend Backbone.Model
    */
-  Hitch.Object = Backbone.Model.extend({
+  Hitch.Object = Backbone.Model.extend(_.extend({
 
     idAttribute: '_id',
 
@@ -260,22 +295,7 @@
 
     storageKey: null,
 
-    acl: null,
-
     relations: {},
-
-    /**
-     * Returns the acl instance for this object
-     * @return {*}
-     */
-    getACL: function() {
-
-      if (!this.acl) {
-        this.acl = new Hitch.ACL(this);
-      }
-
-      return this.acl
-    },
 
     /**
      * Wrapper for Backbone.Model.prototype.set
@@ -348,7 +368,7 @@
       return attributes;
     }
 
-  });
+  }, Hitch.Access));
 
   /**
    * Hitch.Role
@@ -623,7 +643,6 @@
     options = options || {};
 
     // inject options
-    this.currentUser = options.currentUser;
     if (options.resource) this.resource = options.resource;
     if (options.routes) this.routes = options.routes;
 
@@ -632,6 +651,7 @@
 
     // create an acl instance for this router to manage route access
     this.acl = new Hitch.ACL(currentUser);
+    this.currentUser = currentUser;
 
     // bind filters
     this._bindFilters();
@@ -649,7 +669,7 @@
   /**
    * Hitch.Router.prototype
    */
-  _.extend(Hitch.Router.prototype, Backbone.Router.prototype, {
+  _.extend(Hitch.Router.prototype, Backbone.Router.prototype, Hitch.Access, {
 
     constructor: Hitch.Router,
 
@@ -730,12 +750,20 @@
     },
 
     /**
-     * displays a view at the given selector
+     * renders a view at the given selector
      * @param selector
      * @param view
      * @return {*}
      */
-    showView: function(selector, view) {
+    display: function(selector, view) {
+
+      if (!$(selector).length) {
+        throw new Error("No dom element found matching given selector: " + selector);
+      }
+
+      if (!view instanceof Backbone.View) {
+        throw new Error("view must be an instance of Backbone.View");
+      }
 
       if (this._displaySlots[selector]) {
         this._displaySlots[selector].close();
@@ -954,26 +982,17 @@
     // the application name
     name: 'app',
 
-    /*
-     * Returns the application name
-     */
-    getName: function() {
-      return this.name;
-    },
-
     /**
-     * Sets the application title and modifies the document.title
+     * Sets the application title and updates document.title if available
      * @param name
      */
     setName: function(name) {
-      this.name = document.title = ( name || document.title );
-    },
 
-    /**
-     * Returns the application's base route
-     */
-    getBaseRoute: function() {
-      return this.baseRoute;
+      if (document && document.title) {
+        document.title = name;
+      }
+
+      this.name = name;
     },
 
     /**
@@ -1368,6 +1387,7 @@
       }
 
       return '<' + tagName + ' ' + _.flatten(_.map(_.pairs(attrs), function(attr) {
+        attr[0] = attr[0].replace(/([a-z])([A-Z])/, function(m) { return m[0] + '-' + m[1].toLowerCase(); })
         return attr.join('="') + '"';
       })).join(' ') + '>' +
         ( content

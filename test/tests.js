@@ -154,7 +154,35 @@
    * @TODO implement tests
    */
   module('Hitch.Helpers');
-  test('calling helpers', function() { equal(0,0); });
+
+  test('tagFor', function() {
+
+    var result = '<a href="/some/url" data-type="resource">Link</a>'
+      , tag = Hitch.Helpers.tagFor('a', { href: '/some/url', dataType: 'resource' }, 'Link');
+
+    deepEqual(result, tag, 'excepts result is the same as plain the string.');
+
+  });
+
+  test('ucFirst', function() {
+
+    var input = 'string'
+      , result = _.ucFirst(input)
+      , excepted = 'String';
+
+    deepEqual(result, excepted, 'excepts first char to be uppercase');
+
+  });
+
+  test('lcFirst', function() {
+
+    var input = 'String'
+      , result = _.lcFirst(input)
+    , excepted = 'string';
+
+    deepEqual(result, excepted, 'excepts first char to be lowercase');
+
+  });
 
 }).call(this);
 
