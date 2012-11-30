@@ -176,6 +176,18 @@ function buildTarget(target, path) {
     throw new Error("invalid location. no hitch.json found in path");
   }
 
+  if (!data.resources) {
+    data.resources = {};
+  }
+
+  if (!data.modules) {
+    data.modules = {};
+  }
+
+  if (!data.assets) {
+    data.assets = [];
+  }
+
   switch (target) {
     case 'targets':
       console.log('build targets: modules, resources, main, all');
