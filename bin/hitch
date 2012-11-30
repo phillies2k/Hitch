@@ -260,14 +260,14 @@ function generateBootstrap(path, data) {
 
 function generateIndexHtml(path, data) {
   var file = path + '/public/index.html';
-  if (exists(file)) fs.unlinkSync(file);
+  if (exists(file)) return;
   data.root = data.root.charAt(data.root.length-1) !== '/' ? data.root + '/' : data.root;
   createFileFromTemplate(file, 'index', data);
 }
 
 function generateMainIndex(path, data) {
   var file = path + '/public/js/app/index.js';
-  if (exists(file)) fs.unlinkSync(file);
+  if (exists(file)) return;
 
   if (data.pushState === true) {
     exec('cp ' + PATH_SELF + '/data/.htaccess ' + path + '/public/.htaccess');
