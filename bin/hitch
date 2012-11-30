@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
 /**
- * Hitch Command Line Tool v1.0.0
+ * Hitch Command Line Tool v1.1.0
  * Lightweight backbone based single page application framework
  *
  * @author: Philipp Boes <mostgreedy@gmail.com>
  * @copyright: (c) 2012 Philipp Boes
- * @version: 1.0.0
+ * @version: 1.1.0
  */
 
 var fs = require('fs')
@@ -115,10 +115,11 @@ function createApplication(path) {
   if (!exists(path + '/hitch.json')) {
     createFileFromTemplate(path + '/hitch.json', 'hitch.json', {
       name: appName,
-      apiUrl: '',
+      apiUrl: '/api',
       version: '1.0',
       root: '/',
-      pushState: false
+      pushState: false,
+      exports: true
     });
   }
 
@@ -176,7 +177,9 @@ function buildTarget(target, path) {
   }
 
   switch (target) {
-
+    case 'targets':
+      console.log('build targets: modules, resources, main, all');
+      break;
     case 'modules':
       generateModules(path, data);
       break;
@@ -186,21 +189,15 @@ function buildTarget(target, path) {
     case 'main':
       generateBootstrap(path, data);
       break;
-    case 'index':
-      generateIndexHtml(path, data);
-      break;
-    case 'app':
-      generateMainIndex(path, data);
-      break;
     case 'all':
       generateModules(path, data);
       generateResources(path, data);
+      generateMainIndex(path, data);
       generateBootstrap(path, data);
       generateIndexHtml(path, data);
-      generateMainIndex(path, data);
       break;
     default:
-      throw new Error("invalid build target. Use one of modules,resources,index,app,main,all.");
+      throw new Error("invalid build target. Use one of modules,resources,main,all.");
   }
 
 }

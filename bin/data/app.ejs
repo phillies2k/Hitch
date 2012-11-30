@@ -8,13 +8,9 @@ define(function() {
 
   return Hitch.App.extend({
 
-    root: 'body',
+    root: '#<%= name %>',
 
     name: '<%= name %>',
-
-    exports: true,
-
-    apiUrl: '<%= apiUrl %>',
     <% if (typeof baseRoute != 'undefined') { %>
     baseRoute: '<%= baseRoute %>',
     <% } %>

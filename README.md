@@ -77,7 +77,7 @@ and environment.
 ##### Assets `assets`
 This section defines the application assets to be used.
 
-##### Modules `module`
+##### Modules `modules`
 This section defines your application modules
 
 ##### Resources `resources`
@@ -95,10 +95,8 @@ hitch build [target]
 your build target can either be empty ( will execute all building tasks ) or one of the following tasks:
 * `resources` - will create non existing resources
 * `modules` - will initialize non existing modules
-* `app` - will rebuild your application index (use with care)
-* `index` will rebuild your `public/index.html` (use with care)
-* `main` - will rebuild your bootstrap file. This is necessary to call after every update to resources or modules to
-  ensure everything will be loaded.
+* `main` - will rebuild your bootstrap file. This is necessary to call after every update to resources or modules to ensure everything will be loaded.
+* `all` - executes all task at once (same as calling build with no target given.
 
 
 
@@ -118,8 +116,7 @@ your build target can either be empty ( will execute all building tasks ) or one
 ### Hitch.App
 ### Hitch.Helpers
 
-Provides several helper methods that will be mixed in into underscore for being available within the rendering context
-of your views.
+Provides several helper methods that will be mixed in into underscore for being available within the rendering context of your views.
 
 ### Hitch.Cookies
 

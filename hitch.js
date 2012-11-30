@@ -941,6 +941,9 @@
     if (options.baseRoute) this.baseRoute = options.baseRoute;
     if (options.name) this.setName(options.name);
 
+    // check exports
+    if (!_.isUndefined(options.exports)) this.exports = !!(options.exports);
+
     // ensure base route is an instance of RegExp
     if (!_.isRegExp(this.baseRoute)) {
       this.baseRoute = Backbone.Router.prototype._routeToRegExp(this.baseRoute);
