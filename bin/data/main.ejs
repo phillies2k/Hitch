@@ -50,7 +50,7 @@ require([
   )).join(",\n            ") %>
 ) {
 
-  var <%= _.compact([].concat(_.map(_.keys(resources), function(n) { return n + ' = new ' + ucFirst(n) + '()'; }), 'app = new ' + name + '()')).join("\n    , ") %>;
+  var <%= _.compact([].concat(_.map(_.keys(resources), function(n) { return n + ' = new ' + ucFirst(n) + '()'; }), 'app = new ' + name + '({ exports: ' + ( exports ? 'true' : 'false' ) + ', apiUrl: \'' + apiUrl + '\' })')).join("\n    , ") %>;
   <% _.each(resources, function(resource, n) { if (!resource.acl) { return; } %>
   <%= n %>.on('load', function(s) {
     var acl = s.getACL();
