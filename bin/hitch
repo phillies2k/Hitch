@@ -70,7 +70,7 @@ function showHelp() {
   console.log('');
   console.log('+---------------------------------------------------------------+');
   console.log('|                      Hitch Console Utils                      |');
-  console.log('|                            v1.0.0                             |');
+  console.log('|                            v1.1.0                             |');
   console.log('+---------------------------------------------------------------+');
   console.log('');
   console.log('USAGE: hitch [command] [args] (e.g. `hitch create MyApplication`)');
@@ -225,7 +225,7 @@ function createTarget(target) {
 }
 
 function generateModules(path, data) {
-  if (data && _.size(data.modules)) {
+  if (data && _.has(data, 'modules') && _.size(data.modules)) {
     _.each(data.modules, function(module, name) {
       generateModule(path, name, data);
     });
@@ -233,7 +233,7 @@ function generateModules(path, data) {
 }
 
 function generateResources(path, data) {
-  if (data && _.size(data.resources)) {
+  if (data && _.has(data, 'resources') && _.size(data.resources)) {
     _.each(data.resources, function(resource, name) {
       generateResource(path, name, data);
     });
