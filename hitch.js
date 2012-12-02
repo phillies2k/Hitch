@@ -1,10 +1,10 @@
 /**
- * Hitch.js - v0.0.8
+ * Hitch.js - v0.0.9
  * Lightweight backbone based single page application framework
  *
  * @author: Philipp Boes <mostgreedy@gmail.com>
  * @copyright: (c) 2012 Philipp Boes
- * @version: 0.0.8
+ * @version: 0.0.9
  *
  */
 (function() {
@@ -23,8 +23,8 @@
   // cache extend
   extend = Backbone.Router.extend;
 
-  // keep in syn with package.json
-  Hitch.VERSION = '0.0.8';
+  // keep in sync with package.json
+  Hitch.VERSION = '0.0.9';
 
   /**
    * Hitch.Access Mixin
@@ -294,7 +294,7 @@
    * Hitch.Credentials
    * @extend Backbone.Model
    */
-  Hitch.Object = Backbone.Model.extend(_.extend({
+  Hitch.Object = Backbone.Model.extend(_.extend({}, Hitch.Access, {
 
     idAttribute: '_id',
 
@@ -375,7 +375,7 @@
       return attributes;
     }
 
-  }, Hitch.Access));
+  }));
 
   /**
    * Hitch.Role
@@ -545,19 +545,13 @@
    * Hitch.Resource
    * @extend Backbone.Collection
    */
-  Hitch.Resource = Backbone.Collection.extend({
+  Hitch.Resource = Backbone.Collection.extend(_.extend({}, Hitch.Access, {
 
     // list of comparison operators
     operators: '$eq $in $or $gt $gte $lt $lte'.split(' '),
 
     // base model
     model: Hitch.Object,
-
-    // returns the acl for this resource
-    getACL: Hitch.Object.prototype.getACL,
-
-    // sets the acl for this resource
-    setACL: Hitch.Object.prototype.setACL,
 
     /**
      * Finds models matching the given criteria
@@ -638,7 +632,7 @@
       }
     }
 
-  });
+  }));
 
   /**
    * Hitch.Router
@@ -653,12 +647,10 @@
     if (options.resource) this.resource = options.resource;
     if (options.routes) this.routes = options.routes;
 
-    // setup current session user
-    var currentUser = this.getCurrentUser(options.currentUser);
-
-    // create an acl instance for this router to manage route access
-    this.acl = new Hitch.ACL(currentUser);
-    this.currentUser = currentUser;
+    // setup current session user if provided
+    if (options.currentUser) {
+      this.getCurrentUser(options.currentUser);
+    }
 
     // bind filters
     this._bindFilters();
@@ -838,7 +830,7 @@
     },
 
     /**
-     * binds after and before callback handlers
+     * binds routing callback handlers
      * @private
      */
     _bindFilters: function() {
@@ -877,13 +869,11 @@
           , prop = $(node).data('bind-attribute');
 
         this.model.on('change:' + attr, function() {
-
           if (prop) {
             $(node).attr(prop, this.model.get(attr));
           } else {
             $(node).html(this.model.get(attr));
           }
-
         }, this);
       }, this);
 

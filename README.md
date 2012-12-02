@@ -1,7 +1,8 @@
-Hitch v0.0.8
+Hitch v0.0.9
 =====
 
 Lightweight backbone-based single page application framework.
+***Hitch is currently in a very early alpha state.***
 
 * Default [Hitch.Object](#hitchobject)`s for [users](#hitchuser), [credentials](#hitchcredentials) and [roles](#hitchrole)
 * Powerful [Access Control Layer](#hitchacl) for controlling access to [Hitch.Object](#hitchobject)`s
@@ -74,14 +75,17 @@ Configuration means to modify your 'hitch.json' file which was created by either
 you created your application. The hitch.json is divided into several sections which specifies the application structure
 and environment.
 
-##### Assets `assets`
-This section defines the application assets to be used.
+##### Configuration Options
 
-##### Modules `modules`
-This section defines your application modules
-
-##### Resources `resources`
-This section defines the application resources to be available.
+* `name` - your application name
+* `version` - your application version
+* `exports` - (Boolean|String) Whether to export your app to globals/window or not. If value is a string your application will be exported with that name
+* `apiUrl` - your application's base api url
+* `root` - your application's web root path (defaults to '/')
+* `pushState` - Whether to use push state or not
+* `resources` - resource definitions
+* `modules` - module definitions
+* `assets`- your application styles and media
 
 
 ## Using the Command-Line Tool
@@ -99,9 +103,9 @@ your build target can either be empty ( will execute all building tasks ) or one
 * `all` - executes all task at once (same as calling build with no target given.
 
 
-
 ## Packages
 
+* [Hitch.Access](#hitchaccess)
 * [Hitch.ACL](#hitchacl)
 * [Hitch.App](#hitchapp)
 * [Hitch.Credentials](#hitchcredentials)
@@ -112,20 +116,38 @@ your build target can either be empty ( will execute all building tasks ) or one
 * [Hitch.User](#hitchuser)
 * [Hitch.View](#hitchview)
 
-### Hitch.ACL
-### Hitch.App
-### Hitch.Helpers
+### Hitch.Access
+The acl public interface mixin
 
+### Hitch.ACL
+Represents an acl instance
+
+### Hitch.App
+Represents a hitch web application
+
+### Hitch.Helpers
 Provides several helper methods that will be mixed in into underscore for being available within the rendering context of your views.
 
 ### Hitch.Cookies
-
 Provides a CRUD-like interface for cookie access.
 
 ### Hitch.Credentials
+A ready-to-use login interface
+
 ### Hitch.Object
+The enhanced Backbone.Model
+
 ### Hitch.Resource
+The enhanced Backbone.Collection
+
 ### Hitch.Role
+A default role model representation
+
 ### Hitch.Router
+The enhanced Backbone.Router
+
 ### Hitch.User
+A default user model representation
+
 ### Hitch.View
+The enhanced Backbone.View
