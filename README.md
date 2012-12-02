@@ -79,13 +79,27 @@ and environment.
 
 * `name` - your application name
 * `version` - your application version
-* `exports` - (Boolean|String) Whether to export your app to globals/window or not. If value is a string your application will be exported with that name
+* `exports` - Whether to export your app to globals/window or not. If value is a string your application will be exported with that name
 * `apiUrl` - your application's base api url
 * `root` - your application's web root path (defaults to '/')
 * `pushState` - Whether to use push state or not
 * `resources` - resource definitions
 * `modules` - module definitions
 * `assets`- your application styles and media
+
+##### Configuring resources
+
+A resource can be configured as simple as `"myresource": "true"`. This resource will then be loaded on initialization.
+You can control access to a resource by defining an acl property for that resource which holds the permissions.
+
+##### Configuring assets
+
+Assets of type text/less or text/scss will be compiled using an appropriate compiler for either LESS- or SASS-like stylesheets.
+
+##### Configuring modules
+
+A module can have an acl property for configuring access to this module like every resource does it. Furthermore a special
+property named "resource" is available to define a resource this module uses most. (e.g. a UsersRouter usually manages users)
 
 
 ## Using the Command-Line Tool
