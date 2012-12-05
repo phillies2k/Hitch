@@ -1,10 +1,10 @@
 /**
- * Hitch.js - v0.0.9
+ * Hitch.js - v0.1.0-alpha
  * Lightweight backbone based single page application framework
  *
  * @author: Philipp Boes <mostgreedy@gmail.com>
  * @copyright: (c) 2012 Philipp Boes
- * @version: 0.0.9
+ * @version: 0.1.0-alpha
  *
  */
 (function() {
@@ -24,7 +24,7 @@
   extend = Backbone.Router.extend;
 
   // keep in sync with package.json
-  Hitch.VERSION = '0.0.9';
+  Hitch.VERSION = '0.1.0-alpha';
 
   /**
    * Hitch.Access Mixin
@@ -58,6 +58,235 @@
       }
 
       this.acl = acl;
+    }
+  };
+
+  /**
+   * Hitch.Cookies Mixin
+   * @type {Object}
+   */
+  Hitch.Cookies = {
+
+    /**
+     * Return the cookie value for the given name
+     * @param name
+     * @return {*}
+     */
+    get: function (name) {
+      if (!name || !this.has(name)) { return null; }
+      return unescape(document.cookie.replace(new RegExp("(?:^|.*;\\s*)" + escape(name).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*((?:[^;](?!;))*[^;]?).*"), "$1"));
+    },
+
+    /**
+     * Creates a cookie
+     * @param name
+     * @param value
+     * @param expires
+     * @param path
+     * @param domain
+     * @param secure
+     */
+    set: function(name, value, expires, path, domain, secure) {
+      var cookie = {};
+
+      if (!name || /^(?:expires|max\-age|path|domain|secure)$/i.test(name)) return;
+
+      cookie[name] = escape(value);
+
+      _.extend(cookie, _.object(
+        ['expires', 'path', 'domain', 'secure'],
+        _.rest(_.toArray(arguments), 2)
+      ));
+
+      if (cookie.expires && cookie.expires.constructor === Number) {
+        if (cookie.expires === Infinity) {
+          cookie.expires = 'Tue, 19 Jan 2038 03:14:07 GMT';
+        } else {
+          cookie['max-age'] = cookie.expires;
+          delete cookie.expires;
+        }
+      } else if (cookie.expires && cookie.expires.constructor === Date) {
+        cookie.expires = cookie.expires.toGMTString();
+      } else if (cookie.expires && cookie.expires.constructor !== String) {
+        delete cookie.expires;
+      }
+
+      document.cookie = _.compact(_.map(_.pairs(cookie), function(pair) {
+        return !_.isUndefined(pair[1]) && pair.join('=');
+      })).join(';');
+    },
+
+    /**
+     * Deletes a cookie by its name and optional path
+     * @param name
+     * @param path
+     */
+    clear: function (name, path) {
+      if (!name || !this.has(name)) return;
+      document.cookie = escape(name) + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT" + (path ? "; path=" + path : "");
+    },
+
+    /**
+     * Checks if a cookie with given name was set
+     * @param name
+     */
+    has: function (name) {
+      return _.indexOf(this.names(), name) !== -1;
+    },
+
+    /**
+     * Returns the list of cookie names
+     */
+    names: function () {
+      return _.map(document.cookie
+        .replace(/((?:^|\s*;)[^\=]+)(?=;|$)|^\s*|\s*(?:\=[^;]*)?(?:\1|$)/g, "")
+        .split(/\s*(?:\=[^;]*)?;\s*/)
+        , function(name) {
+          return unescape(name);
+        });
+    }
+  };
+
+  /**
+   * Hitch.Helpers Mixin
+   * @type {Object}
+   */
+  Hitch.Helpers = {
+
+    /**
+     * Creates a labeled and edittable form field for given model and attribute.
+     * @param model
+     * @param attr
+     * @param options
+     */
+    formField: function(model, attr, options) {
+
+      function onFocus(e) {
+        $('label[for^=' + _id + ']').removeClass('error');
+        $(selector).removeClass('error').next('span').remove();
+        prev = $(selector).val();
+      }
+
+      function onBlur(e) {
+
+        var attrs = {}
+          , value = $(selector).val();
+
+        if (prev === curr) return;
+
+        if (options.prop) {
+          attrs[attr] = {};
+          attrs[attr][options.prop] = value;
+        } else {
+          attrs[attr] = value;
+        }
+
+        model.on('error', function(m, err) {
+          $('label[for^=' + _id + ']').addClass('error');
+          $(selector).addClass('error').val(prev).insertAfter(
+            $('<span></span>').text(err)
+          );
+        });
+
+        model.set(attrs);
+        if (options.save) model.save();
+      }
+
+      function onInsertDOM(e) {
+        $(selector).on('focus', onFocus);
+        $(selector).on('blur', onBlur);
+      }
+
+      var curr = model.get(attr)
+        , type
+        , selector = '#' + attr + (model.isNew() ? '' : '-' + model.id )
+        , _id = selector.substring(1)
+        , prev = $(selector).val()
+        , tagName = 'input'
+        , label = attr
+        , attrs = { id: _id, value: curr }
+        , fieldEl = 'div';
+
+      options = options || {};
+
+      if (_.isBoolean(options)) options = { save: options };
+      if (_.isString(options)) options = { label: options };
+      if (options.label) label = options.label;
+      if (options.fieldEl) labelEl = options.fieldEl;
+      if (options.password) type = 'password';
+      if (options.placeholder) attrs.placeholder = options.placeholder;
+      if (options.prop && curr && _.has(curr, options.prop)) curr = attrs.value = curr[options.prop];
+      if (options.text) {
+        tagName = 'textarea';
+        attrs = _.pick(attrs, 'id', 'placeholder');
+      }
+
+      type = attrs.type = type || ( _.isBoolean(curr) ? 'checkbox' : ( _.isNumber(curr) ? 'number' : 'text' ));
+      _.inDom(selector, onInsertDOM);
+
+      return _.tagFor(fieldEl, { id: 'ff-' + _id, class: 'form-field' }, [
+        _.tagFor('div', { class: 'form-field-name' }, [
+          _.tagFor('label', { class: 'form-field-label', for: _id }, label),
+          _.tagFor('span', { class: 'form-field-description' }, options.description)
+        ]),
+        _.tagFor(tagName, attrs, options.text && curr)
+      ]);
+    },
+
+    /**
+     * Waits until given element or selector was found in the dom and then calls callback
+     * @param el
+     * @param callback
+     */
+    inDom: function(el, callback) {
+
+      var attempts = 0
+        , to;
+
+      (function timer() {
+        if (++attempts > 1000) return;
+        if (!$(el).length) return to = setTimeout(timer, 0);
+        if (to) clearTimeout(to);
+        callback();
+      })();
+
+    },
+
+    /**
+     * Creates a html tag
+     * @param tagName
+     * @param attrs
+     * @param content
+     */
+    tagFor: function(tagName, attrs, content) {
+
+      var _noClosingTags = 'link input meta'.split(' ')
+
+      if (attrs && !content && !_.isObject(attrs)) {
+        content = attrs;
+        attrs = {};
+      }
+
+      return '<' + tagName + ' ' + _.flatten(_.map(_.pairs(attrs), function(attr) {
+        attr[0] = attr[0].replace(/([a-z])([A-Z])/, function(m) { return m[0] + '-' + m[1].toLowerCase(); })
+        return attr.join('="') + '"';
+      })).join(' ') + '>' +
+        ( content
+          ? _.isArray(content) ? content.join('') : content
+          : ''
+          ) +
+        ( _noClosingTags.indexOf(tagName) >= 0
+          ? ''
+          : '</' + tagName + '>'
+          );
+    },
+
+    ucFirst: function(str) {
+      return str.charAt(0).toUpperCase() + str.substring(1);
+    },
+
+    lcFirst: function(str) {
+      return str.charAt(0).toLowerCase() + str.substring(1);
     }
   };
 
@@ -296,12 +525,16 @@
    */
   Hitch.Object = Backbone.Model.extend(_.extend({}, Hitch.Access, {
 
+    // defaults to Mongo-style id
     idAttribute: '_id',
 
+    // if the object is stored locally (window.localStorage)
     isStoredLocally: false,
 
+    // the storage key to use when writing to window.localStorage
     storageKey: null,
 
+    // object relations
     relations: {},
 
     /**
@@ -378,6 +611,153 @@
   }));
 
   /**
+   * Hitch.Resource
+   * @extend Backbone.Collection
+   */
+  Hitch.Resource = Backbone.Collection.extend(_.extend({}, Hitch.Access, {
+
+    // list of comparison operators
+    operators: '$eq $in $or $gt $gte $lt $lte'.split(' '),
+
+    // base model
+    model: Hitch.Object,
+
+    /**
+     * Finds models matching the given criteria
+     * @param criteria the criteria to filter for
+     * @param options (optional)
+     * @return {[]} list of matched models
+     */
+    find: function(criteria, options) {
+
+      var results;
+
+      if (_.isEmpty(criteria)) return this.models;
+
+      results = this.filter(function(model) {
+        for (var key in criteria) {
+          if (!this._evaluateCriteria(model, key, criteria[key], null)) {
+            return false;
+          }
+        }
+        return true;
+      }, this);
+
+      return options.limit ? _.first(results, options.limit) : results;
+    },
+
+    /**
+     * Finds one result matching the criteria
+     * @param criteria
+     * @return {*}
+     */
+    findOne: function(criteria) {
+      if (!$.isPlainObject(criteria)) return;
+      return this.find(criteria, { limit: 1 });
+    },
+
+    /**
+     * Evaluates the search-criteria for a given attribute on the model
+     * @param model the model to use
+     * @param attr the attribute name of the property to check
+     * @param value the expected value
+     * @param operator (optional) operator to use for comparison
+     * @return Boolean
+     * @private
+     */
+    _evaluateCriteria: function(model, attr, value, operator) {
+
+      function returnVal(statement, condition, op) {
+        if (!op) return statement == condition;
+        switch (op) {
+          case '$eq':
+            return statement === condition;
+          case '$in':
+            return statement.indexOf(condition) >= 0;
+          case '$or':
+            return statement || condition;
+          case '$gt':
+            return statement > condition;
+          case '$gte':
+            return statement >= condition;
+          case '$lt':
+            return statement < condition;
+          case '$lte':
+            return statement <= condition;
+          default:
+            return false;
+        }
+      }
+
+      if (this.operators.indexOf(attr) === -1) {
+        return returnVal(model.get(attr), value, operator);
+      } else if (_.isObject(value)) {
+        for (var p in value) {
+          if (!this._evaluateCriteria(model, p, value[p], attr)) {
+            return false;
+          }
+        }
+        return true;
+      }
+    }
+
+  }));
+
+  /**
+   * Hitch.Cookie
+   * @extend Hitch.Object
+   */
+  Hitch.Cookie = Hitch.Object.extend({
+
+    initialize: function() {
+      this.id = _.uniqueId(this.get('name'));
+    },
+
+    sync: function(method, model, options) {
+
+      var success = options.success
+        , error = options.error
+        , resp = Hitch.Cookies.get(this.get('name'));
+
+      if (method === 'create' || method === 'update') {
+
+        Hitch.Cookies.set(
+          this.get('name'),
+          this.get('value'),
+          this.get('expires'),
+          this.get('path'),
+          this.get('domain'),
+          this.get('secure')
+        );
+
+        if (success) {
+          success(true);
+        }
+
+        return true;
+
+      } else if (method === 'read') {
+
+        if (success) {
+          success(resp);
+        }
+
+        return true;
+
+      } else if (method === 'delete') {
+
+        if (resp) {
+          Hitch.Cookies.clear(this.get('name'));
+        }
+
+        return true;
+
+      }
+
+    }
+  });
+
+  /**
    * Hitch.Role
    * @extend Hitch.Object
    */
@@ -432,7 +812,25 @@
    * Hitch.Credentials
    * @extend Hitch.Object
    */
-  Hitch.Credentials = Hitch.Object.extend({
+  Hitch.Credentials = function(user, options) {
+
+    if (!user instanceof Hitch.User) {
+      throw new Error("user must be an instance of Hitch.User");
+    }
+
+    options = options || {};
+  };
+
+  // make it extendable
+  Hitch.Credentials.extend = extend;
+
+  /**
+   * Hitch.Credentials.prototype
+   * @type {*}
+   */
+  Hitch.Credentials.prototype = _.extend({}, Hitch.Object.prototype, {
+
+    constructor: Hitch.Credentials,
 
     // the name of the login attribute
     userAttribute: 'username',
@@ -537,102 +935,27 @@
       }, this);
 
       return Hitch.Object.prototype.fetch.call(this, options);
+    },
+
+    authenticate: function(user, options) {
+
+      if (!user instanceof Hitch.User) {
+        throw new Error("user must be an instance of Hitch.User");
+      }
+
+      var login = user.get(this.userAttribute)
+        , password = user.get(this.passAttribute)
+        , attrs = {};
+
+      if (login && password) {
+        attrs[this.userAttribute] = login;
+        attrs[this.passAttribute] = password;
+        this.set(attrs, { silent: options.silent });
+        this.fetch(options);
+      }
     }
 
   });
-
-  /**
-   * Hitch.Resource
-   * @extend Backbone.Collection
-   */
-  Hitch.Resource = Backbone.Collection.extend(_.extend({}, Hitch.Access, {
-
-    // list of comparison operators
-    operators: '$eq $in $or $gt $gte $lt $lte'.split(' '),
-
-    // base model
-    model: Hitch.Object,
-
-    /**
-     * Finds models matching the given criteria
-     * @param criteria the criteria to filter for
-     * @param options (optional)
-     * @return {[]} list of matched models
-     */
-    find: function(criteria, options) {
-
-      var results;
-
-      if (_.isEmpty(criteria)) return this.models;
-
-      results = this.filter(function(model) {
-        for (var key in criteria) {
-          if (!this._evaluateCriteria(model, key, criteria[key], null)) {
-            return false;
-          }
-        }
-        return true;
-      }, this);
-
-      return options.limit ? _.first(results, options.limit) : results;
-    },
-
-    /**
-     * Finds one result matching the criteria
-     * @param criteria
-     * @return {*}
-     */
-    findOne: function(criteria) {
-      if (!$.isPlainObject(criteria)) return;
-      return this.find(criteria, { limit: 1 });
-    },
-
-    /**
-     * Evaluates the search-criteria for a given attribute on the model
-     * @param model the model to use
-     * @param attr the attribute name of the property to check
-     * @param value the expected value
-     * @param operator (optional) operator to use for comparison
-     * @return Boolean
-     * @private
-     */
-    _evaluateCriteria: function(model, attr, value, operator) {
-
-      function returnVal(statement, condition, op) {
-        if (!op) return statement == condition;
-        switch (op) {
-          case '$eq':
-            return statement === condition;
-          case '$in':
-            return statement.indexOf(condition) >= 0;
-          case '$or':
-            return statement || condition;
-          case '$gt':
-            return statement > condition;
-          case '$gte':
-            return statement >= condition;
-          case '$lt':
-            return statement < condition;
-          case '$lte':
-            return statement <= condition;
-          default:
-            return false;
-        }
-      }
-
-      if (this.operators.indexOf(attr) === -1) {
-        return returnVal(model.get(attr), value, operator);
-      } else if (_.isObject(value)) {
-        for (var p in value) {
-          if (!this._evaluateCriteria(model, p, value[p], attr)) {
-            return false;
-          }
-        }
-        return true;
-      }
-    }
-
-  }));
 
   /**
    * Hitch.Router
@@ -1053,6 +1376,8 @@
     appendAsset: function(type, source) {
       if (type === 'stylesheet') {
         $('<link rel="stylesheet" type="text/css" href="' + source + '">').appendTo('head');
+      } else if (type === 'favicon') {
+        $('<link rel="favicon" type="image/icon" href="' + source + '">').appendTo('head');
       } else if (type === 'javascript') {
         $('<script type="text/javascript" src="' + source + '"></script>').appendTo('head');
       }
@@ -1142,7 +1467,7 @@
     },
 
     error: function() {
-      // overwrite in subclasses
+      // overwrite in subclasses (default error route)
     }
 
   });
@@ -1177,235 +1502,6 @@
 
     } else {
       return Backbone.sync(method, model, options);
-    }
-  };
-
-  /**
-   * Hitch.Cookies
-   * @type {Object}
-   */
-  Hitch.Cookies = {
-
-    /**
-     * Return the cookie value for the given name
-     * @param name
-     * @return {*}
-     */
-    get: function (name) {
-      if (!name || !this.has(name)) { return null; }
-      return unescape(document.cookie.replace(new RegExp("(?:^|.*;\\s*)" + escape(name).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*((?:[^;](?!;))*[^;]?).*"), "$1"));
-    },
-
-
-    /**
-     * Creates a cookie
-     * @param name
-     * @param value
-     * @param expires
-     * @param path
-     * @param domain
-     * @param secure
-     */
-    set: function(name, value, expires, path, domain, secure) {
-      var cookie = {};
-
-      if (!name || /^(?:expires|max\-age|path|domain|secure)$/i.test(name)) return;
-
-      cookie[name] = escape(value);
-
-      _.extend(cookie, _.object(
-        ['expires', 'path', 'domain', 'secure'],
-        _.rest(_.toArray(arguments), 2)
-      ));
-
-      if (cookie.expires && cookie.expires.constructor === Number) {
-        if (cookie.expires === Infinity) {
-          cookie.expires = 'Tue, 19 Jan 2038 03:14:07 GMT';
-        } else {
-          cookie['max-age'] = cookie.expires;
-          delete cookie.expires;
-        }
-      } else if (cookie.expires && cookie.expires.constructor === Date) {
-        cookie.expires = cookie.expires.toGMTString();
-      } else if (cookie.expires && cookie.expires.constructor !== String) {
-        delete cookie.expires;
-      }
-
-      document.cookie = _.compact(_.map(_.pairs(cookie), function(pair) {
-        return !_.isUndefined(pair[1]) && pair.join('=');
-      })).join(';');
-    },
-
-    /**
-     * Deletes a cookie by its name and optional path
-     * @param name
-     * @param path
-     */
-    clear: function (name, path) {
-      if (!name || !this.has(name)) return;
-      document.cookie = escape(name) + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT" + (path ? "; path=" + path : "");
-    },
-
-    /**
-     * Checks if a cookie with given name was set
-     * @param name
-     */
-    has: function (name) {
-      return _.indexOf(this.names(), name) !== -1;
-    },
-
-    /**
-     * Returns the list of cookie names
-     */
-    names: function () {
-      return _.map(document.cookie
-        .replace(/((?:^|\s*;)[^\=]+)(?=;|$)|^\s*|\s*(?:\=[^;]*)?(?:\1|$)/g, "")
-        .split(/\s*(?:\=[^;]*)?;\s*/)
-        , function(name) {
-          return unescape(name);
-        });
-    }
-  };
-
-  /**
-   * Hitch.Helpers
-   * @type {Object}
-   */
-  Hitch.Helpers = {
-
-    /**
-     * Creates a labeled and edittable form field for given model and attribute.
-     * @param model
-     * @param attr
-     * @param options
-     */
-    formField: function(model, attr, options) {
-
-      function onFocus(e) {
-        $('label[for^=' + _id + ']').removeClass('error')
-        $(selector).removeClass('error').next('span').remove();
-        prev = $(selector).val();
-      }
-
-      function onBlur(e) {
-
-        var attrs = {}
-          , value = $(selector).val();
-
-        if (prev === curr) return;
-
-        if (options.prop) {
-          attrs[attr] = {};
-          attrs[attr][options.prop] = value;
-        } else {
-          attrs[attr] = value;
-        }
-
-        model.on('error', function(m, err) {
-          $('label[for^=' + _id + ']').addClass('error')
-          $(selector).addClass('error').val(prev).insertAfter(
-            $('<span></span>').text(err)
-          );
-        });
-
-        model.set(attrs);
-        if (options.save) model.save();
-      }
-
-      var curr = model.get(attr)
-        , type
-        , selector = '#' + attr + (model.isNew() ? '' : '-' + model.id )
-        , _id = selector.substring(1)
-        , prev = $(selector).val()
-        , tagName = 'input'
-        , label = attr
-        , attrs = { id: _id, value: curr };
-
-      options = options || {};
-
-      if (_.isBoolean(options)) options = { save: options };
-      if (_.isString(options)) options = { label: options };
-      if (options.label) label = options.label;
-      if (options.password) type = 'password';
-      if (options.placeholder) attrs.placeholder = options.placeholder;
-      if (options.prop && curr && _.has(curr, options.prop)) curr = attrs.value = curr[options.prop];
-
-      type = attrs.type = type || ( _.isBoolean(curr) ? 'checkbox' : ( _.isNumber(curr) ? 'number' : 'text' ));
-
-      if (options.text) {
-        tagName = 'textarea';
-        attrs = _.pick(attrs, 'id', 'placeholder');
-      } else if (options.source instanceof Hitch.Resource) {
-        tagName = 'select';
-        attrs = _.pick(attrs, 'id', 'placeholder');
-        _.each(options.source, function(model) {
-          _.tagFor('option', { value: model.get() }, model.get())
-        });
-      }
-
-      _.inDom(selector, function() {
-        $(selector).on('focus', onFocus);
-        $(selector).on('blur', onBlur);
-      });
-
-      return _.tagFor('dt', _.tagFor('label', { for: _id }, label)) +
-        _.tagFor('dd', _.tagFor(tagName, attrs, options.text && curr));
-    },
-
-    /**
-     * Waits until given element or selector was found in the dom and then calls callback
-     * @param el
-     * @param callback
-     */
-    inDom: function(el, callback) {
-
-      var attempts = 0
-        , to;
-
-      (function timer() {
-        if (++attempts > 1000) return;
-        if (!$(el).length) return to = setTimeout(timer, 0);
-        if (to) clearTimeout(to);
-        callback();
-      })();
-
-    },
-
-    /**
-     * Creates a html tag
-     * @param tagName
-     * @param attrs
-     * @param content
-     */
-    tagFor: function(tagName, attrs, content) {
-
-      var _noClosingTags = 'link input meta'.split(' ')
-
-      if (attrs && !content && !_.isObject(attrs)) {
-        content = attrs;
-        attrs = {};
-      }
-
-      return '<' + tagName + ' ' + _.flatten(_.map(_.pairs(attrs), function(attr) {
-        attr[0] = attr[0].replace(/([a-z])([A-Z])/, function(m) { return m[0] + '-' + m[1].toLowerCase(); })
-        return attr.join('="') + '"';
-      })).join(' ') + '>' +
-        ( content
-          ? content
-          : ''
-          ) +
-        ( _noClosingTags.indexOf(tagName) >= 0
-          ? ''
-          : '</' + tagName + '>'
-          );
-    },
-
-    ucFirst: function(str) {
-      return str.charAt(0).toUpperCase() + str.substring(1);
-    },
-
-    lcFirst: function(str) {
-      return str.charAt(0).toLowerCase() + str.substring(1);
     }
   };
 

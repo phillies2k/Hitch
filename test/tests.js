@@ -138,20 +138,6 @@
   });
 
   /**
-   * @module: Hitch.App
-   * @TODO implement tests
-   */
-  module('Hitch.App');
-  test('Initializing application', function() { equal(0,0); });
-
-  /**
-   * @module: Hitch.View
-   * @TODO implement tests
-   */
-  module('Hitch.View');
-  test('Initializing view', function() { equal(0,0); });
-
-  /**
    * @module: Hitch.Cookies
    */
   module('Hitch.Cookies');
@@ -177,39 +163,27 @@
   });
 
   /**
-   * @module: Hitch.Helpers
-   * @TODO implement tests
+   * @module: Hitch.Cookie
    */
-  module('Hitch.Helpers');
+  module('Hitch.Cookie');
 
-  test('tagFor', function() {
+  test('Test cookies', function() {
 
-    var result = '<a href="/some/url" data-type="resource">Link</a>'
-      , tag = Hitch.Helpers.tagFor('a', { href: '/some/url', dataType: 'resource' }, 'Link');
+    var testCookie1 = new Hitch.Cookie({ name: 'cookieTest', value: 'test' });
+    equal(testCookie1.save(), true, 'cookie was saved correctly');
 
-    deepEqual(result, tag, 'excepts result is the same as plain the string.');
+    var testCookie1Value = Hitch.Cookies.get('cookieTest');
+    equal(testCookie1Value, 'test', 'document.cookie was set correctly');
 
-  });
+    testCookie1.set({ value: 'hello' });
+    testCookie1.save();
+    equal(Hitch.Cookies.get('cookieTest'), 'hello', 'updating cookies works fine');
 
-  test('ucFirst', function() {
-
-    var input = 'string'
-      , result = _.ucFirst(input)
-      , excepted = 'String';
-
-    deepEqual(result, excepted, 'excepts first char to be uppercase');
+    testCookie1.destroy();
+    equal(Hitch.Cookies.get('cookieTest'), undefined, 'cookie was destroyed correctly');
 
   });
 
-  test('lcFirst', function() {
-
-    var input = 'String'
-      , result = _.lcFirst(input)
-    , excepted = 'string';
-
-    deepEqual(result, excepted, 'excepts first char to be lowercase');
-
-  });
 
 }).call(this);
 

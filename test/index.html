@@ -13,17 +13,11 @@
   <script>
     $(function() {
 
-
-      var coverage = 32
-        , shouldBeCovered = countFunctions(Hitch);
-
       function countFunctions(obj) {
         var count = 0;
 
         _.each(obj, function(prop, name) {
-
           if (!_.isFunction(prop) && _.isObject(prop)) {
-            console.log(name);
             count += countFunctions(prop);
           } else if (_.isFunction(prop)) {
             count += _.functions(prop.prototype).length;
@@ -33,15 +27,19 @@
         return count;
       }
 
-      $('#coverage').html(coverage + ' of ' + shouldBeCovered + ' (' + Math.round(coverage/shouldBeCovered*10000)/100 + '%)');
+      var coverage = 31
+        , shouldBeCovered = countFunctions(Hitch) - countFunctions(Backbone)
+        , percentage = Math.round(coverage/shouldBeCovered*10000)/100
+        , headline = coverage + ' of ' + shouldBeCovered + ' (' + percentage + '%)';
 
+      $('#coverage').html(headline);
 
     });
   </script>
 </head>
 <body>
 
-<h2>COVERAGE: <span id="coverage"></span></h2>
+<h2>Current Coverage: <span id="coverage"></span></h2>
 
 <div id="qunit"></div>
 

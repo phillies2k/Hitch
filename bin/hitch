@@ -1,362 +1,492 @@
 #!/usr/bin/env node
 
 /**
- * Hitch Command Line Tool v1.1.2
+ * Hitch Command Line Tools
  * Lightweight backbone based single page application framework
  *
  * @author: Philipp Boes <mostgreedy@gmail.com>
  * @copyright: (c) 2012 Philipp Boes
- * @version: 1.1.2
+ * @version: 0.1.0-alpha
  */
+(function() {
 
-var fs = require('fs')
-  , exec = require('child_process').exec
-  , _ = require('underscore')
-  , inflect = require('inflection')
-  , PATH_SELF = __dirname
-  , PATH_ROOT = fs.realpathSync(PATH_SELF + '/../')
-  , ConsoleUtils = function() {
-    this._handlers = {};
-    this._commands = {};
-  };
+  function createFileFromTemplate(filename, template, data, callback) {
 
-ConsoleUtils.prototype.pushCommand = function(command, callback) {
+    var filePath = PATH_ROOT + '/lib/data/' + template + '.ejs'
+      , contents, tmpl, compiled;
 
-  if (!command instanceof ConsoleUtils.Command) {
-    throw new Error("first argument needs to be an instance of ConsoleUtils.Command");
-  }
+    if (exists(filePath)) {
 
-  if (!_.isFunction(callback)) {
-    throw new Error("second argument must be a valid callback");
-  }
+      contents = fs.readFileSync(filePath).toString();
 
-  if (this._commands[command.name]) {
-    throw new Error("this command is already registered");
-  }
+      tmpl = _.template(contents);
 
-  this._commands[command.name] = command;
-  this._handlers[command.name] = callback;
-};
+      compiled = tmpl(_.extend({
+        ucFirst: function(str) {
+          return str.charAt(0).toUpperCase() + str.substring(1);
+        }
+      }, data));
 
-ConsoleUtils.prototype.run = function() {
-
-  var args = _.rest(process.argv, 2)
-    , dispatched = false;
-
-  _.each(this._handlers, function(callback, name) {
-    var command = this._commands[name];
-    if (command.accepts(args)) {
-      callback.apply(this, _.rest(args));
-      dispatched = true;
+      fs.writeFileSync(filename, compiled);
+      if (callback) callback();
     }
-  }, this);
-
-  if (!dispatched) showHelp();
-};
-
-
-ConsoleUtils.Command = function(name) {
-  this.name = name;
-};
-
-ConsoleUtils.Command.prototype.accepts = function(args) {
-  if (!args.length) return false;
-  if (this.name !== args[0]) return false;
-  return true;
-};
-
-function showHelp() {
-
-  console.log('');
-  console.log('+---------------------------------------------------------------+');
-  console.log('|                      Hitch Console Utils                      |');
-  console.log('|                            v1.1.0                             |');
-  console.log('+---------------------------------------------------------------+');
-  console.log('');
-  console.log('USAGE: hitch [command] [args] (e.g. `hitch create MyApplication`)');
-  console.log('');
-  console.log('- create                       creates project targets.');
-  console.log('         module [name]         creates a new module');
-  console.log('         resource [name]       creates a new resource');
-  console.log('         [name]                creates a new hitch application');
-  console.log('');
-  console.log('- build [target]               builds/rebuilds project targets.');
-  console.log('                               target can be one of: resources, modules, index, app, main, all');
-  console.log('');
-  console.log('- remove [target]              removes project targets');
-  console.log('                               target can be one of: resources, modules, index, app, main, all');
-  console.log('');
-  console.log('- help                         shows this information');
-  console.log('');
-
-}
-
-function createApplication(path) {
-
-  var appName
-    , data;
-
-  // ensure path
-  if (!path) {
-    path = process.cwd();
-  } else if (path.charAt(0) !== '/') {
-    path = process.cwd() + '/' + path;
   }
 
-  // check app dir
-  if (!exists(path)) {
-    fs.mkdirSync(path, 0755);
+  function exists(name) {
+
+    var stat;
+
+    try {
+
+      stat = fs.lstatSync(name);
+      return stat.isFile() || stat.isDirectory();
+
+    } catch (err) {
+    }
+
+    return false;
   }
 
-  // apply app name
-  appName = path.split('/').pop();
+  function parseJSONFile(file) {
+    var contents, raw;
+    if (exists(file)) {
+      contents = JSON.parse(fs.readFileSync(file));
+      _.each(contents, function(val, key) {
+        contents[key] = val === 'true' ? true : val === 'false' ? false : val;
+      });
+    }
+    return contents;
+  }
 
-  // ensure hitch.json
-  if (!exists(path + '/hitch.json')) {
-    createFileFromTemplate(path + '/hitch.json', 'hitch.json', {
-      name: appName,
-      apiUrl: '/api',
-      version: '1.0',
-      root: '/',
-      pushState: false,
-      exports: true
+  function buildAssets(path, data) {
+    _.each(data.assets, function(asset) {
+      buildAsset(path, asset.type, asset.name, asset.watch);
     });
   }
 
-  // read configuration
-  data = parseJSONFile(path + '/hitch.json');
+  function buildAsset(path, type, name, watch) {
 
-  // check configuration
-  if (!data || !data.name || !data.version) {
-    console.log('invalid hitch configuration.');
-    process.exit();
-    return;
-  }
+    var fileExt = type === 'less' ? 'less' : type === 'sass' ? 'scss' : null
+      , command = type === 'less' ? 'lessc --yui-compress' : type === 'sass' ? 'scss' : null
+      , getPath = function(s) { return '/' + _.compact(_.initial(s.split('/'))).join('/'); }
+      , srcFile = path + '/assets/' + type + '/' + name + '.' + fileExt
+      , dstFile = path + '/public/css/' + name + '.css'
+      , srcPath = getPath(srcFile)
+      , dstPath = getPath(dstFile);
 
-  // create the app skeleton
-  [
-    'assets',
-    'public',
-    'public/css',
-    'public/img',
-    'public/js',
-    'public/js/app',
-    'public/js/app/modules',
-    'public/js/app/resources',
-    'public/js/app/templates',
-    'public/js/app/views',
-    'public/js/vendor'
-  ].forEach(function(p) {
-    fs.mkdirSync(path + '/' + p, 0755);
-  });
+    if (command) {
 
-  // copy dependencies
-  exec('cp ' + PATH_ROOT + '/node_modules/backbone/backbone.js ' + path + '/public/js/vendor/backbone.js');
-  exec('cp ' + PATH_ROOT + '/node_modules/underscore/underscore.js ' + path + '/public/js/vendor/underscore.js');
-  exec('cp ' + PATH_ROOT + '/node_modules/requirejs/require.js ' + path + '/public/js/vendor/require.js');
-  exec('cp ' + PATH_ROOT + '/node_modules/jquery/tmp/jquery.js ' + path + '/public/js/vendor/jquery.js');
-  exec('cp ' + PATH_ROOT + '/hitch.js ' + path + '/public/js/vendor/hitch.js');
-
-  // build
-  buildTarget('all', path);
-}
-
-function buildTarget(target, path) {
-
-  var data;
-
-  if (!target) {
-    target = 'all';
-  }
-
-  path = path || process.cwd();
-  data = parseJSONFile(path + '/hitch.json');
-
-  if (!data) {
-    throw new Error("invalid location. no hitch.json found in path");
-  }
-
-  if (!data.resources) {
-    data.resources = {};
-  }
-
-  if (!data.modules) {
-    data.modules = {};
-  }
-
-  if (!data.assets) {
-    data.assets = [];
-  }
-
-  switch (target) {
-    case 'targets':
-      console.log('build targets: modules, resources, main, all');
-      break;
-    case 'modules':
-      generateModules(path, data);
-      break;
-    case 'resources':
-      generateResources(path, data);
-      break;
-    case 'main':
-      generateBootstrap(path, data);
-      break;
-    case 'all':
-      generateModules(path, data);
-      generateResources(path, data);
-      generateMainIndex(path, data);
-      generateBootstrap(path, data);
-      generateIndexHtml(path, data);
-      break;
-    default:
-      throw new Error("invalid build target. Use one of modules,resources,main,all.");
-  }
-
-}
-
-function createTarget(target) {
-
-  var path = process.cwd()
-    , args = _.rest(arguments)
-    , data = parseJSONFile(path + '/hitch.json');
-
-  if (!target) {
-    throw new Error("invalid target");
-  }
-
-  switch (target) {
-    case 'module':
-      generateModule(path, args[0], data);
-      break;
-    case 'resource':
-      generateResource(path, args[0], data);
-      break;
-    default:
-      createApplication(target);
-  }
-}
-
-function generateModules(path, data) {
-  if (data && _.has(data, 'modules') && _.size(data.modules)) {
-    _.each(data.modules, function(module, name) {
-      generateModule(path, name, data);
-    });
-  }
-}
-
-function generateResources(path, data) {
-  if (data && _.has(data, 'resources') && _.size(data.resources)) {
-    _.each(data.resources, function(resource, name) {
-      generateResource(path, name, data);
-    });
-  }
-}
-
-function generateBootstrap(path, data) {
-  var file = path + '/public/js/main.js';
-  if (exists(file)) fs.unlinkSync(file);
-  createFileFromTemplate(file, 'main', data);
-}
-
-function generateIndexHtml(path, data) {
-  var file = path + '/public/index.html';
-  if (exists(file)) return;
-  data.root = data.root.charAt(data.root.length-1) !== '/' ? data.root + '/' : data.root;
-  createFileFromTemplate(file, 'index', data);
-}
-
-function generateMainIndex(path, data) {
-  var file = path + '/public/js/app/index.js';
-  if (exists(file)) return;
-
-  if (data.pushState === true) {
-    exec('cp ' + PATH_SELF + '/data/.htaccess ' + path + '/public/.htaccess');
-  }
-
-  createFileFromTemplate(file, 'app', data);
-}
-
-function generateResource(path, name, data) {
-  var resourceFile = path + '/public/js/app/resources/' + name + '.js';
-  if (!exists(resourceFile)) {
-    createFileFromTemplate(resourceFile, 'resource', _.extend({
-      resource: name,
-      model: inflect.classify(name)
-    }, data));
-  }
-}
-
-function generateModule(path, name, data) {
-
-  var modulePath = path + '/public/js/app/modules/' + name;
-
-  if (!exists(modulePath)) {
-
-    fs.mkdirSync(modulePath, 0755);
-    fs.mkdirSync(modulePath + '/templates', 0755);
-    fs.mkdirSync(modulePath + '/views', 0755);
-
-    createFileFromTemplate(modulePath + '/index.js', 'module', _.extend({
-      module: inflect.classify(name)
-    }, data));
-  }
-}
-
-function createFileFromTemplate(filename, template, data) {
-
-  var filePath = PATH_SELF + '/data/' + template + '.ejs'
-    , contents, tmpl, compiled;
-
-  if (exists(filePath)) {
-
-    contents = fs.readFileSync(filePath).toString();
-
-    tmpl = _.template(contents);
-
-    compiled = tmpl(_.extend({
-      ucFirst: function(str) {
-        return str.charAt(0).toUpperCase() + str.substring(1);
+      if (!exists(srcFile)) {
+        if (!exists(srcPath)) {
+          fs.mkdirSync(srcPath, 0755);
+        }
+        createFileFromTemplate(srcFile, 'asset', { type: type, name: name });
       }
-    }, data));
 
-    fs.writeFileSync(filename, compiled);
+      if (!exists(dstPath)) {
+        fs.mkdirSync(dstPath, 0755);
+      }
+
+      if (exists(dstFile)) {
+        fs.unlinkSync(dstFile);
+      }
+
+      console.log('EXEC', [ command, srcPath, dstPath ].join(' '));
+      exec([ command, srcPath, dstPath ].join(' '));
+
+      if (type === 'scss' && watch === true) {
+        exec('scss --watch ' + [ srcFile, dstFile ].join(':'));
+      }
+    }
   }
-}
 
-function exists(name) {
+  function buildTarget(target, path) {
 
-  var stat;
+    var data;
+
+    if (!target) {
+      target = 'all';
+    }
+
+    path = path || process.cwd();
+    data = parseJSONFile(path + '/hitch.json');
+
+    if (!data) {
+      throw new Error("invalid location. no hitch.json found in path");
+    }
+
+    if (!data.resources) {
+      data.resources = {};
+    }
+
+    if (!data.modules) {
+      data.modules = {};
+    }
+
+    if (!data.assets) {
+      data.assets = [];
+    }
+
+    switch (target) {
+      case 'targets':
+        console.log('build targets: assets, modules, resources, main, all');
+        break;
+      case 'assets':
+        buildAssets(data);
+        break;
+      case 'modules':
+        generateModules(path, data);
+        break;
+      case 'resources':
+        generateResources(path, data);
+        break;
+      case 'main':
+        generateBootstrap(path, data);
+        break;
+      case 'all':
+        buildAssets(path, data);
+        generateModules(path, data);
+        generateResources(path, data);
+        generateMainIndex(path, data);
+        generateBootstrap(path, data);
+        generateIndexHtml(path, data);
+        break;
+      default:
+        throw new Error("invalid build target. Use one of assets, modules, resources, main, all.");
+    }
+
+  }
+
+  function createTarget(target) {
+
+    var path = process.cwd()
+      , args = _.rest(arguments)
+      , data = parseJSONFile(path + '/hitch.json');
+
+    if (!target) {
+      throw new Error("invalid target");
+    }
+
+    switch (target) {
+      case 'asset':
+        buildAsset(path, args[0], args[1]);
+        break;
+      case 'module':
+        generateModule(path, args[0], data);
+        break;
+      case 'resource':
+        generateResource(path, args[0], data);
+        break;
+      default:
+        createApplication(target);
+    }
+  }
+
+  function removeTarget(target) {
+    console.log('not yet implemented.');
+  }
+
+  function generateModules(path, data) {
+    if (data && _.has(data, 'modules') && _.size(data.modules)) {
+      _.each(data.modules, function(module, name) {
+        generateModule(path, name, data);
+      });
+    }
+  }
+
+  function generateResources(path, data) {
+    if (data && _.has(data, 'resources') && _.size(data.resources)) {
+      _.each(data.resources, function(resource, name) {
+        generateResource(path, name, data);
+      });
+    }
+  }
+
+  function generateBootstrap(path, data) {
+    var file = path + '/public/js/main.js';
+    if (exists(file)) fs.unlinkSync(file);
+    createFileFromTemplate(file, 'main', data);
+  }
+
+  function generateIndexHtml(path, data) {
+    var file = path + '/public/index.html';
+    if (exists(file)) return;
+    data.root = data.root.charAt(data.root.length-1) !== '/' ? data.root + '/' : data.root;
+    createFileFromTemplate(file, 'index', data);
+  }
+
+  function generateMainIndex(path, data) {
+    var file = path + '/public/js/app/index.js';
+    if (exists(file)) return;
+
+    if (data.pushState === true) {
+      exec('cp ' + PATH_SELF + '/data/.htaccess ' + path + '/public/.htaccess');
+    }
+
+    createFileFromTemplate(file, 'app', data);
+  }
+
+  function generateResource(path, name, data) {
+    var resourceFile = path + '/public/js/app/resources/' + name + '.js';
+    if (!exists(resourceFile)) {
+      createFileFromTemplate(resourceFile, 'resource', _.extend({
+        resource: name,
+        model: inflect.classify(name)
+      }, data));
+    }
+  }
+
+  function generateModule(path, name, data) {
+
+    var modulePath = path + '/public/js/app/modules/' + name;
+
+    if (!exists(modulePath)) {
+
+      fs.mkdirSync(modulePath, 0755);
+      fs.mkdirSync(modulePath + '/templates', 0755);
+      fs.mkdirSync(modulePath + '/views', 0755);
+
+      createFileFromTemplate(modulePath + '/index.js', 'module', _.extend({
+        module: name
+      }, data));
+    }
+  }
+
+  function createApplication(path) {
+
+    var appName
+      , data;
+
+    // ensure path
+    if (!path) {
+      path = process.cwd();
+    } else if (path.charAt(0) !== '/') {
+      path = process.cwd() + '/' + path;
+    }
+
+    // check app dir
+    if (!exists(path)) {
+      fs.mkdirSync(path, 0755);
+    }
+
+    // apply app name
+    appName = path.split('/').pop();
+
+    // ensure hitch.json
+    if (!exists(path + '/hitch.json')) {
+      createFileFromTemplate(path + '/hitch.json', 'hitch.json', {
+        name: appName,
+        apiUrl: '/api',
+        version: '1.0',
+        root: '/',
+        pushState: false,
+        exports: true
+      });
+    }
+
+    // read configuration
+    data = parseJSONFile(path + '/hitch.json');
+
+    // check configuration
+    if (!data || !data.name || !data.version) {
+      console.log('invalid hitch configuration.');
+      process.exit();
+      return;
+    }
+
+    // create the app skeleton
+    [
+      'assets',
+      'public',
+      'public/css',
+      'public/img',
+      'public/js',
+      'public/js/app',
+      'public/js/app/modules',
+      'public/js/app/resources',
+      'public/js/app/templates',
+      'public/js/app/views',
+      'public/js/vendor',
+      'public/js/vendor/backbone',
+      'public/js/vendor/hitch',
+      'public/js/vendor/jquery',
+      'public/js/vendor/require',
+      'public/js/vendor/underscore'
+    ].forEach(function(p) {
+        fs.mkdirSync(path + '/' + p, 0755);
+      });
+
+    // copy dependencies
+    exec('cp ' + PATH_ROOT + '/node_modules/backbone/backbone.js ' + path + '/public/js/vendor/backbone/backbone.js');
+    exec('cp ' + PATH_ROOT + '/node_modules/underscore/underscore.js ' + path + '/public/js/vendor/underscore/underscore.js');
+    exec('cp ' + PATH_ROOT + '/node_modules/requirejs/require.js ' + path + '/public/js/vendor/require/require.js');
+    exec('cp ' + PATH_ROOT + '/node_modules/jquery/tmp/jquery.js ' + path + '/public/js/vendor/jquery/jquery.js');
+    exec('cp ' + PATH_ROOT + '/lib/vendor/text.js ' + path + '/public/js/vendor/require/text.js');
+    exec('cp ' + PATH_ROOT + '/hitch.js ' + path + '/public/js/vendor/hitch/hitch.js');
+
+    // install dependencies
+    var vars = [ '$', '_', 'Backbone', 'Hitch'];
+    _.each([ 'jquery', 'underscore', 'backbone', 'hitch' ], function(n,i) {
+      createFileFromTemplate(path + '/public/js/vendor/' + n + '.js', 'wrapper', { paths: ['\'vendor/' + n + '/' + n + '\''], vars: [], exports: vars[i] });
+    });
+
+    // build
+    buildTarget('all', path);
+  }
+
+  function deploy(version) {
+
+    var data = parseJSONFile('hitch.json')
+      , buildPath = process.cwd() + '/build'
+      , buildConfig = buildPath + '/config.js'
+      , deploymentPath
+      , currentBuildPath;
+
+    if (!data) {
+      throw new Error("no hitch.json found");
+    }
+
+    if (!data.deployment) {
+      throw new Error("no deployment configured");
+    }
+
+    if (!data.deployment.server) {
+      data.deployment.server = 'local';
+    }
+
+    if (!data.deployment.root) {
+      data.deployment.root = '/';
+    }
+
+    if (!data.deployment.path) {
+      data.deployment.path = '';
+    }
+
+    deploymentPath = data.deployment.root + data.deployment.path;
+    currentBuildPath = buildPath + '/' + data.version;
+
+    console.log('STARTING DEPLOYMENT');
+    console.log('Path: ' + deploymentPath);
+    console.log('Name: ' + data.name);
+    console.log('Version: ' + data.version);
+
+    if (!exists(buildPath)) {
+      fs.mkdirSync(buildPath, 0755);
+    }
+
+    if (exists(buildConfig)) {
+      exec('rm ' + buildConfig, function() {
+        console.log('> removed existing build configuration');
+      });
+    }
+
+    createFileFromTemplate(buildConfig, 'config', {
+      out: data.version + '/main-' + data.version + '.js'
+    }, function() {
+      console.log('> created build configuration');
+    });
+
+    // remove existing build folder
+    if (exists(currentBuildPath)) {
+      exec('rm -Rf ' + currentBuildPath, function() {
+        console.log('> removed existing build directory');
+      });
+    }
+
+    // build
+    exec('mkdir -p ' + currentBuildPath, function() {
+      console.log('> created current build folder');
+      console.log('> building...');
+      exec('node ' + PATH_RJS + ' -o ' + buildConfig, function() {
+        console.log('BUILD SUCCESSFULL!');
+      });
+    });
+  }
+
+  function showHelp() {
+
+    var pkg = parseJSONFile(PATH_ROOT + '/package.json');
+
+    console.log('');
+    console.log('+' + _strRepeat('-', 73) + '+');
+    console.log('|' + _strCenter('Hitch Command Line Tools', 73) + '|');
+    console.log('|' + _strCenter('Hitch v' + pkg.version, 73) + '|');
+    console.log('+' + _strRepeat('-', 73) + '+');
+    console.log('');
+    console.log('USAGE: hitch [command] [args] (e.g. `hitch create MyApplication`)');
+    console.log('');
+    console.log('COMMANDS:');
+    console.log('');
+    console.log('- create                       creates project targets.');
+    console.log('         asset [type] [name]   creates a new asset of given type and name');
+    console.log('         module [name]         creates a new named module');
+    console.log('         resource [name]       creates a new resource');
+    console.log('         [path]                creates a new hitch application');
+    console.log('');
+    console.log('- build [target]               builds/rebuilds project targets.');
+    console.log('         assets                compiles assets and updates public files');
+    console.log('         modules               creates missing module folders and files');
+    console.log('         resources             creates missing resource files');
+    console.log('         main                  rebuilds your main.js');
+    console.log('         all                   executes all targets at once');
+    console.log('');
+    console.log('- remove [target]              removes project targets');
+    console.log('         module [name]         removes given module from the project');
+    console.log('         resource [name]       deletes the given resource');
+    console.log('');
+    console.log('- help                         shows this information');
+    console.log('');
+
+  }
+
+  function _strRepeat(str, times) {
+    return _.range(0,times).map(function(n){ return str; }).join('')
+  }
+
+  function _strCenter(str, len, char) {
+
+    var ws = len - str.length
+      , bf = 0
+      , af = 0;
+
+    if (len <= str.length) return str;
+    char = char || ' ';
+
+    if (ws%2===0) {
+      bf=af=ws/2;
+    } else {
+      bf=Math.floor(ws/2);
+      af=Math.ceil(ws/2);
+    }
+
+    return _strRepeat(char, bf) + str + _strRepeat(char, af);
+  }
+
+  var fs = require('fs')
+    , exec = require('child_process').exec
+    , _ = require('underscore')
+    , inflect = require('inflection')
+    , PATH_SELF = __dirname
+    , PATH_ROOT = fs.realpathSync(PATH_SELF + '/../')
+    , PATH_RJS = PATH_ROOT + '/node_modules/requirejs/bin/r.js'
+    , ConsoleUtils = require('../lib/console_utils')
+    , cli = new ConsoleUtils(showHelp);
+
+  cli.pushCommand(new ConsoleUtils.Command('build'), buildTarget);
+  cli.pushCommand(new ConsoleUtils.Command('create'), createTarget);
+  cli.pushCommand(new ConsoleUtils.Command('remove'), removeTarget);
+  cli.pushCommand(new ConsoleUtils.Command('help'), showHelp);
+  cli.pushCommand(new ConsoleUtils.Command('deploy'), deploy);
 
   try {
 
-    stat = fs.lstatSync(name);
-    return stat.isFile() || stat.isDirectory();
+    cli.run();
 
   } catch (err) {
+
+    console.log('ERROR:', err.message);
+    process.exit();
+
   }
 
-  return false;
-}
-
-function parseJSONFile(file) {
-  var contents;
-  if (exists(file)) {
-    contents = JSON.parse(fs.readFileSync(file));
-    _.each(contents, function(val, key) {
-      contents[key] = val === 'true' ? true : val === 'false' ? false : val;
-    });
-  }
-  return contents;
-}
-
-function removeTarget(target) {
-  console.log('not implemented yet.');
-}
-
-var cli = new ConsoleUtils();
-
-cli.pushCommand(new ConsoleUtils.Command('build'), buildTarget);
-cli.pushCommand(new ConsoleUtils.Command('create'), createTarget);
-cli.pushCommand(new ConsoleUtils.Command('remove'), removeTarget);
-cli.pushCommand(new ConsoleUtils.Command('help'), showHelp);
-cli.run();
+}).call(this);

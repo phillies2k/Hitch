@@ -1,4 +1,4 @@
-Hitch v0.0.9
+Hitch v0.1.0-alpha
 =====
 
 Lightweight backbone-based single page application framework.
@@ -22,9 +22,13 @@ Lightweight backbone-based single page application framework.
 * [Configuration](#configuration)
 * [Using the Command-Line Tool](#using-the-command-line-tool)
 * [Packages](#packages)
+  * [Hitch.Access](#hitchaccess)
   * [Hitch.ACL](#hitchacl)
   * [Hitch.App](#hitchapp)
+  * [Hitch.Cookie](#hitchcookie)
+  * [Hitch.Cookies](#hitchcookies)
   * [Hitch.Credentials](#hitchcredentials)
+  * [Hitch.Helpers](#hitchhelpers)
   * [Hitch.Object](#hitchobject)
   * [Hitch.Resource](#hitchresource)
   * [Hitch.Role](#hitchrole)
@@ -55,12 +59,6 @@ Simply type in the following:
 ```bash
 hitch create [path]
 ```
-
-If the tool will find no hitch.json in the current folder it will prompt you to enter some basic values for your new
-application and will auto-generate a hitch.json with the given information.
-
-Two folders ('assets' and 'public') will be created in your application folder. Within these the tool will create your
-ready to use kick-start application.
 
 There are two ways to get your app working:
 Either you can configure a vhost for the public directory of your application or go to your "app/index.js" file and
@@ -122,7 +120,10 @@ your build target can either be empty ( will execute all building tasks ) or one
 * [Hitch.Access](#hitchaccess)
 * [Hitch.ACL](#hitchacl)
 * [Hitch.App](#hitchapp)
+* [Hitch.Cookie](#hitchcookie)
+* [Hitch.Cookies](#hitchcookies)
 * [Hitch.Credentials](#hitchcredentials)
+* [Hitch.Helpers](#hitchhelpers)
 * [Hitch.Object](#hitchobject)
 * [Hitch.Resource](#hitchresource)
 * [Hitch.Role](#hitchrole)
@@ -139,14 +140,17 @@ Represents an acl instance
 ### Hitch.App
 Represents a hitch web application
 
-### Hitch.Helpers
-Provides several helper methods that will be mixed in into underscore for being available within the rendering context of your views.
+### Hitch.Cookie
+Represents a cookie
 
 ### Hitch.Cookies
 Provides a CRUD-like interface for cookie access.
 
 ### Hitch.Credentials
 A ready-to-use login interface
+
+### Hitch.Helpers
+Provides several helper methods that will be mixed in into underscore for being available within the rendering context of your views.
 
 ### Hitch.Object
 The enhanced Backbone.Model

@@ -1,6 +1,6 @@
 {
   "name": "backbone-hitch",
-  "version": "0.0.9",
+  "version": "0.1.0-alpha",
   "description": "Lightweight framework built on top of backbone",
   "keywords": [
     "framework",
@@ -8,7 +8,8 @@
     "mvc",
     "SPA",
     "single page application",
-    "backbone framework"
+    "backbone framework",
+    "tools"
   ],
   "author": "Philipp Boes <mostgreedy@gmail.com> (https://github.com/phillies2k)",
   "homepage": "https://github.com/phillies2k/Hitch",
