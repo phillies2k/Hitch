@@ -9,11 +9,11 @@
  * @version: 0.1.0-alpha
  */
 
-var buildTarget = require('../lib/tools').buildTarget
-  , createTarget = require('../lib/tools').createTarget
-  , removeTarget = require('../lib/tools').removeTarget
-  , showHelp = require('../lib/tools').showHelp
-  , deploy = require('../lib/tools').deploy
+var buildTarget = require('../lib/functions').buildTarget
+  , createTarget = require('../lib/functions').createTarget
+  , removeTarget = require('../lib/functions').removeTarget
+  , showHelp = require('../lib/functions').showHelp
+  , deploy = require('../lib/functions').deploy
   , ConsoleUtils = require('../lib/console_utils')
   , cli = new ConsoleUtils(showHelp);
 
