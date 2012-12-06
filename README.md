@@ -1,8 +1,8 @@
 Hitch v0.1.0-alpha
 =====
-
 Lightweight backbone-based single page application framework.
-*** Hitch is currently in a very early alpha state. ***
+
+***Hitch is currently in a very early alpha state.***
 
 * Default [Hitch.Object](#hitchobject)`s for [users](#hitchuser), [credentials](#hitchcredentials) and [roles](#hitchrole)
 * Powerful [Access Control Layer](#hitchacl) for controlling access to [Hitch.Object](#hitchobject)`s
@@ -69,8 +69,7 @@ hitch create [path]
 There are two ways to get your app working:
 Either you can configure a vhost for the public directory of your application or go to your "app/index.js" file and
 set the root property to your web-root pointing to your application's public directory.
-Point your browser to <our application and have a look at your freshly created hitch application.
-
+Point your browser to your application and have a look at your freshly created hitch application.
 
 
 ## Configuration
@@ -94,19 +93,68 @@ and environment.
 ##### Configuring resources
 
 A resource can be configured as simple as `"myresource": "true"`. This resource will then be loaded on initialization.
-You can control access to a resource by defining an acl property for that resource which holds the permissions.
+```javascript
+{
+  ...
+  "resources": {
+    "users": "true"
+  }
+}
+```
 
 ##### Configuring assets
 
 Assets of type text/less or text/scss will be compiled using an appropriate compiler for either LESS- or SASS-like stylesheets.
+```javascript
+{
+  ...
+  "assets": [
+    {
+      "type": "scss",
+      "path": "scss/layout/common"
+    }
+  ]
+}
+```
 
 ##### Configuring modules
 
-A module can have an acl property for configuring access to this module like every resource does it. Furthermore a special
-property named "resource" is available to define a resource this module uses most. (e.g. a UsersRouter usually manages users)
+A module can have an `acl` property for configuring access to this module (e.g. access to the routes). Furthermore a special
+property named "resource" is available to define a resource this module manages
+```javascript
+{
+  ...
+  "modules": {
+    "users": {
+      "resource": "users",
+      "acl": {
+        "role:user": "r",
+        "role:admin": "rw"
+      }
+    }
+  }
+}
+```
 
 
 ## Using the Command-Line Tool
+
+Hitch`s command line tool offers a bunch of helpful tools to ease up developer`s life when using Hitch to create single
+page applications. See `hitch help` for a detailed usage documentation.
+
+##### The `create` command
+
+```bash
+hitch create [target]
+```
+
+your target can either be the path of the hitch application you want to create or one of the following targets:
+* `resource` - will create a new resource
+* `module` - will create a module
+
+It`s recommended that you use the `create [resource|module] [name]` commands with care because hitch.json will not be
+updated when creating targets manually. You have to extend the hitch.json file by yourself.
+
 
 ##### The `build` command
 
@@ -119,6 +167,20 @@ your build target can either be empty ( will execute all building tasks ) or one
 * `modules` - will initialize non existing modules
 * `main` - will rebuild your bootstrap file. This is necessary to call after every update to resources or modules to ensure everything will be loaded.
 * `all` - executes all task at once (same as calling build with no target given.
+
+
+##### The `deploy` command
+
+```bash
+hitch deploy
+```
+
+This command tries to deploy your project to the deployment configuration found in your hitch.json. It will create a
+build/ folder in your application root and will deploy your compiled application to a new sub folder `build/$version$/`.
+It will also create `build/config.js` which holds the requirejs r.js build configuration to combine/uglify your application`s code.
+It will also deploy your assets by using an appropriate compiler to compile LESS and SASS stylesheets.
+
+Currently the deployment only works for `'deployment.server = 'local'`.
 
 
 ## Packages
