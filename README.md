@@ -5,7 +5,7 @@ Lightweight backbone-based single page application framework.
 ***Hitch is currently in a very early alpha state.***
 
 * Default [Hitch.Object](#hitchobject)`s for [users](#hitchuser), [credentials](#hitchcredentials) and [roles](#hitchrole)
-* Powerful [Access Control Layer](#hitchacl) for controlling access to [Hitch.Object](#hitchobject)`s
+* Powerful [Access Control Layer](#hitchacl) for controlling access to [Hitch.Router](#hitchobject)`s
 * Auto-generate your hitch applications using the command-line tool
 * Provides a npm package.json like config for building your application and to keep it up-to-date.
 * Module based app structure based on the amd module pattern
@@ -82,7 +82,7 @@ and environment.
 
 * `name` - your application name
 * `version` - your application version
-* `exports` - Whether to export your app to globals/window or not. If value is a string your application will be exported with that name
+* `exports` - Boolean (default:true) If value is a string your application will be exported with that name
 * `apiUrl` - your application's base api url
 * `root` - your application's web root path (defaults to '/')
 * `pushState` - Whether to use push state or not
@@ -140,7 +140,7 @@ property named "resource" is available to define a resource this module manages
 ## Using the Command-Line Tool
 
 Hitch`s command line tool offers a bunch of helpful tools to ease up developer`s life when using Hitch to create single
-page applications. See `hitch help` for a detailed usage documentation.
+page applications. See `hitch help` for a detailed documentation.
 
 ##### The `create` command
 

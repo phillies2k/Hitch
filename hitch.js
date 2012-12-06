@@ -631,8 +631,8 @@
     find: function(criteria, options) {
 
       var results;
-
-      if (_.isEmpty(criteria)) return this.models;
+      if (!criteria || _.isEmpty(criteria)) return this.models;
+      options = options || {};
 
       results = this.filter(function(model) {
         for (var key in criteria) {
@@ -652,8 +652,8 @@
      * @return {*}
      */
     findOne: function(criteria) {
-      if (!$.isPlainObject(criteria)) return;
-      return this.find(criteria, { limit: 1 });
+      var all = this.find(criteria);
+      return all.length ? all[0] : all;
     },
 
     /**
@@ -668,7 +668,9 @@
     _evaluateCriteria: function(model, attr, value, operator) {
 
       function returnVal(statement, condition, op) {
+
         if (!op) return statement == condition;
+
         switch (op) {
           case '$eq':
             return statement === condition;
@@ -689,16 +691,16 @@
         }
       }
 
-      if (this.operators.indexOf(attr) === -1) {
-        return returnVal(model.get(attr), value, operator);
-      } else if (_.isObject(value)) {
+      if (_.isObject(value) && model[attr]) {
         for (var p in value) {
-          if (!this._evaluateCriteria(model, p, value[p], attr)) {
+          if (!this._evaluateCriteria(model[attr], p, value[p], operator)) {
             return false;
           }
         }
         return true;
       }
+
+      return returnVal(model.get(attr), value, operator);
     }
 
   }));

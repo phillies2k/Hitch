@@ -10,14 +10,6 @@
     , a, b, c, d
     , router;
 
-
-  /**
-   * @module: Hitch.ACL
-   * @TODO implement tests
-   */
-  module('Hitch.ACL');
-  test('Initializing an ACL', function() { equal(0,0); });
-
   /**
    * @module: Hitch.Object
    */
@@ -49,8 +41,8 @@
     deepEqual(a.b, b, 'related object is a reference of the object');
     deepEqual(a.c, c, 'related resource is a reference of the resource');
 
-    deepEqual(a.get('b'), b.toJSON(), '');
-    deepEqual(a.get('c'), c.toJSON(), '');
+    deepEqual(a.get('b'), b.toJSON(), 'get(nestedModel) returns the json encoded version');
+    deepEqual(a.get('c'), c.toJSON(), 'get(nestedCollection) returns the json encoded version');
 
   });
 
@@ -70,7 +62,6 @@
 
     var acl = a.getACL()
       , usr = new Hitch.User({ _id: 1 });
-
 
     equal(acl._determineUserId(usr), 1);
 
@@ -92,8 +83,43 @@
     deepEqual(acl.toJSON(), acl.permissions);
   });
 
+
+  /**
+   * @module: Hitch.Resource
+   */
   module('Hitch.Resource');
-  test('Initializing a resource', function() { equal(0,0); });
+  asyncTest('Hitch.Resource', function() {
+
+    var R = Hitch.Resource.extend({ url: '/mstgrd.net/api/users', model: Hitch.User, parse: function(response) { return _.values(response); } });
+    var r = new R();
+
+    r.fetch({
+      success: function() {
+
+        var d = r.findOne();
+
+        ok(d instanceof Hitch.User, 'find working for findOne');
+
+        var u = r.find({
+          username: 'admin'
+        })[0];
+
+        deepEqual(u.get('username'), 'admin', 'find single deps attributes');
+
+        var n = r.find({
+          role: {
+            name: 'Moderator'
+          }
+        });
+
+        deepEqual(n.length, 2, 'find complex criteria attributes');
+
+        start();
+      }
+    });
+
+  });
+
 
   /**
    * @module: Hitch.Router
