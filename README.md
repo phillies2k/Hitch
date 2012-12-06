@@ -2,7 +2,7 @@ Hitch v0.1.0-alpha
 =====
 
 Lightweight backbone-based single page application framework.
-***Hitch is currently in a very early alpha state.***
+*** Hitch is currently in a very early alpha state. ***
 
 * Default [Hitch.Object](#hitchobject)`s for [users](#hitchuser), [credentials](#hitchcredentials) and [roles](#hitchrole)
 * Powerful [Access Control Layer](#hitchacl) for controlling access to [Hitch.Object](#hitchobject)`s
@@ -38,11 +38,14 @@ Lightweight backbone-based single page application framework.
 
 ## Installation
 
-#### Getting the npm package
+You can either install the npm package or clone this repository and build your custom Hitch installation.
+
+#### Using the npm package
 
 ```bash
-npm install backbone-hitch
+npm install backbone-hitch -g
 ```
+Now you're ready to go.
 
 #### Cloning the repository
 
@@ -50,6 +53,9 @@ npm install backbone-hitch
 git clone git@github.com/phillies2k/hitch.git
 cd hitch && npm install
 ```
+
+Now all necessary dependencies are available and Hitch can be used.
+Ensure to add the commandline tool in ./bin/hitch to your PATH variable.
 
 
 ## Setup
