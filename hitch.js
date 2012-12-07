@@ -290,6 +290,68 @@
     }
   };
 
+  // mixin helpers
+  _.mixin(Hitch.Helpers);
+
+  /**
+   * Hitch.AccessControlList
+   * @constructor
+   */
+  Hitch.AccessControlList = function() {
+    this._publicPermissions = {};
+    this._routePermissions = {};
+  };
+
+  /**
+   * Hitch.AccessControlList.prototype
+   * @type {Object}
+   */
+  Hitch.AccessControlList.prototype = {
+
+    constructor: Hitch.AccessControlList,
+
+    getAccess: function(route, obj) {
+
+      var permissions;
+
+      if (!obj instanceof Hitch.Object) {
+        throw new Error("second argument must be an instance of Hitch.Object");
+      }
+
+      if (this._publicPermissions[route] || !this._routePermissions[route]) return true;
+      permissions = this._routePermissions[route];
+
+      return !!permissions[obj.id];
+
+    },
+
+    setAccess: function(route, obj, permissions) {
+
+      if (!route) {
+        throw new Error("setAccess requires at least one argument: the route.");
+      }
+
+      if (_.isUndefined(obj) || obj === true) {
+        this._publicPermissions[route] = true;
+        return true;
+      }
+
+      if (_.isUndefined(permissions)) {
+        permissions = true;
+      }
+
+      if (!_.isBoolean(permissions)) {
+        permissions = !!permissions;
+      }
+
+      if (!this._routePermissions[route]) {
+        this._routePermissions[route] = {};
+      }
+
+      this._routePermissions[route][obj.id] = permissions;
+    }
+  };
+
   /**
    * Hitch.ACL
    * @param permissions
@@ -1055,7 +1117,12 @@
 
       Backbone.history.route(route, _.bind(function(fragment) {
 
-        var args = this._extractParameters(route, fragment);
+        var args = this._extractParameters(route, fragment)
+          , acl = this.getACL()
+          , canAccessRoute = acl.getAccess(name);
+
+        console.log(canAccessRoute, acl);
+        if (!canAccessRoute) return;
 
         if (this._applyFilters('before', fragment, args)) {
 
@@ -1164,6 +1231,9 @@
     }
 
   });
+
+  // ensure history is present
+  Backbone.history = Backbone.history || new Backbone.History();
 
   /**
    * Hitch.View
@@ -1506,11 +1576,5 @@
       return Backbone.sync(method, model, options);
     }
   };
-
-  // mixin helpers
-  _.mixin(Hitch.Helpers);
-
-  // ensure history is present
-  Backbone.history = Backbone.history || new Backbone.History();
 
 }).call(this);

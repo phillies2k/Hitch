@@ -211,6 +211,16 @@
   });
 
 
+
+
+  module('Hitch.AccessControlList');
+  test('Hitch.AccessControlList', function() {
+
+
+
+  });
+
+
 }).call(this);
 
 
