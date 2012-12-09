@@ -562,6 +562,7 @@
 
       options.success = _.bind(function() {
         this.trigger('load', this);
+        if (success) success();
       }, this);
 
       return this.fetch(options);
