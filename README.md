@@ -1,8 +1,7 @@
-Hitch v0.1.0-alpha
-=====
-Lightweight backbone-based single page application framework.
+Hitch v0.1.0
+==================
 
-***Hitch is currently in a very early alpha state.***
+Lightweight backbone-based single page application framework.
 
 * Default [Hitch.Object](#hitchobject)s for [users](#hitchuser), [credentials](#hitchcredentials) and [roles](#hitchrole)
 * Powerful [Access Control Layer](#hitchacl) for controlling access to [Hitch.Router](#hitchobject)s

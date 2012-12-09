@@ -1,10 +1,10 @@
 /**
- * Hitch.js - v0.1.0-alpha
+ * Hitch.js - v0.1.0
  * Lightweight backbone based single page application framework
  *
  * @author: Philipp Boes <mostgreedy@gmail.com>
  * @copyright: (c) 2012 Philipp Boes
- * @version: 0.1.0-alpha
+ * @version: 0.1.0
  *
  */
 (function() {
@@ -24,7 +24,7 @@
   extend = Backbone.Router.extend;
 
   // keep in sync with package.json
-  Hitch.VERSION = '0.1.0-alpha';
+  Hitch.VERSION = '0.1.0';
 
   /**
    * Hitch.Access Mixin
@@ -44,7 +44,7 @@
         this.acl = new Hitch.ACL();
       }
 
-      return this.acl
+      return this.acl;
     },
 
     /**
@@ -62,7 +62,7 @@
   };
 
   /**
-   * Hitch.Cookies Mixin
+   * Hitch.Cookies
    * @type {Object}
    */
   Hitch.Cookies = {
@@ -294,21 +294,27 @@
   _.mixin(Hitch.Helpers);
 
   /**
-   * Hitch.AccessControlList
+   * Hitch.ACL
    * @constructor
    */
-  Hitch.AccessControlList = function() {
+  Hitch.ACL = function(obj, permissions) {
+
     this._publicPermissions = {};
     this._routePermissions = {};
+
+    if ($.isPlainObject(obj) && obj.public && obj.routes) {
+      this._publicPermissions = obj.public;
+      this._routePermissions = obj.routes;
+    }
   };
 
   /**
-   * Hitch.AccessControlList.prototype
+   * Hitch.ACL.prototype
    * @type {Object}
    */
-  Hitch.AccessControlList.prototype = {
+  Hitch.ACL.prototype = {
 
-    constructor: Hitch.AccessControlList,
+    constructor: Hitch.ACL,
 
     getAccess: function(route, obj) {
 
@@ -344,241 +350,23 @@
         permissions = !!permissions;
       }
 
-      if (!this._routePermissions[route]) {
-        this._routePermissions[route] = {};
-      }
+      if (route === '*') {
 
-      this._routePermissions[route][obj.id] = permissions;
-    }
-  };
+        this._publicPermissions[route] = permissions;
 
-  /**
-   * Hitch.ACL
-   * @param permissions
-   * @constructor
-   */
-  Hitch.ACL = function(permissions) {
-
-    this.permissions = {};
-
-    if (permissions instanceof Hitch.Object || permissions instanceof Hitch.Resource) {
-
-      this.setReadAccess(permissions, true);
-      this.setWriteAccess(permissions, true);
-
-    } else if (_.isObject(permissions)) {
-
-      _.each(permissions, function(accessList, userId) {
-
-        this.permissions[userId] = {};
-
-        _.each(accessList, function(allowed, permission) {
-          this.permissions[userId][permission] = allowed;
-        }, this);
-
-      }, this);
-
-    }
-  };
-
-  // Public access role
-  Hitch.ACL.PUBLIC = 'PUBLIC';
-
-  /**
-   * Hitch.ACL.prototype
-   * @type {Object}
-   */
-  Hitch.ACL.prototype = {
-
-    constructor: Hitch.ACL,
-
-    /**
-     * Returns the user id
-     * @param userId
-     * @return {*}
-     * @private
-     */
-    _determineUserId: function(userId) {
-      if (userId instanceof Hitch.User) {
-        return userId.id;
-      } else if (userId instanceof Hitch.Role) {
-        return 'role:' + userId.getName();
-      } else if (userId instanceof Hitch.Resource) {
-        return 'resource:' + userId.name;
-      } else if (_.isObject(userId)) {
-        return userId.toString();
       } else {
-        return userId;
-      }
-    },
 
-    /**
-     * Returns access permissions for the given access type and user id
-     * @param accessType
-     * @param userId
-     * @return {*}
-     * @private
-     */
-    _getAccess: function(accessType, userId) {
-
-      var permissions;
-
-      userId = this._determineUserId(userId);
-      permissions = this.permissions[userId];
-
-      if (!permissions) {
-        return false;
-      }
-
-      if (!permissions[accessType]) {
-        return false;
-      };
-
-      return permissions[accessType];
-    },
-
-    /**
-     * Sets the access rights for the given access type and user id
-     * @param accessType
-     * @param userId
-     * @param allowed
-     * @private
-     */
-    _setAccess: function(accessType, userId, allowed) {
-
-      var permissions;
-
-      userId = this._determineUserId(userId);
-      permissions = this.permissions[userId];
-
-      if (!permissions) {
-        if (!allowed) return;
-        permissions = {};
-        this.permissions[userId] = permissions;
-      }
-
-      if (allowed) {
-        this.permissions[userId][accessType] = true;
-      } else {
-        delete permissions[accessType];
-        if (_.isEmpty(permissions)) {
-          delete permissions[userId];
+        if (!this._routePermissions[route]) {
+          this._routePermissions[route] = {};
         }
+
+        this._routePermissions[route][obj.id] = permissions;
       }
     },
 
-    /**
-     * Returns the public read access permission
-     * @return {*}
-     */
-    getPublicReadAccess: function() {
-      return this._getAccess('read', Hitch.ACL.PUBLIC);
-    },
-
-    /**
-     * Sets the public read access permission
-     * @param allowed
-     */
-    setPublicReadAccess: function(allowed) {
-      this._setAccess('read', Hitch.ACL.PUBLIC, allowed);
-    },
-
-    /**
-     * Returns role read permissions
-     * @param role
-     * @return {*}
-     */
-    getRoleReadAccess: function(role) {
-      return this._getAccess('read', role);
-    },
-
-    /**
-     * Sets read access permissions for the given role
-     * @param role
-     * @param allowed
-     */
-    setRoleReadAccess: function(role, allowed) {
-      this._setAccess('read', role, allowed);
-    },
-
-    /**
-     * Returns the read access permission for a given user id
-     * @param userId
-     * @return {*}
-     */
-    getReadAccess: function(userId) {
-      return this._getAccess('read', userId);
-    },
-
-    /**
-     * Sets the read access permission for a given user id
-     * @param userId
-     * @param allowed
-     */
-    setReadAccess: function(userId, allowed) {
-      this._setAccess('read', userId, allowed);
-    },
-
-    /**
-     * Returns the write access permission for a given user id
-     * @param userId
-     * @return {*}
-     */
-    getWriteAccess: function(userId) {
-      return this._getAccess('write', userId);
-    },
-
-    /**
-     * Sets the write access permission for a given user id
-     * @param userId
-     * @param allowed
-     */
-    setWriteAccess: function(userId, allowed) {
-      this._setAccess('write', userId, allowed);
-    },
-
-    /**
-     * Returns the public write access permission
-     * @return {*}
-     */
-    getPublicWriteAccess: function() {
-      return this._getAccess('write', Hitch.ACL.PUBLIC);
-    },
-
-    /**
-     * Sets the public write access permission
-     * @param allowed
-     */
-    setPublicWriteAccess: function(allowed) {
-      this._setAccess('write', Hitch.ACL.PUBLIC, allowed);
-    },
-
-    /**
-     * Returns the write access permission for a given role
-     * @param role
-     * @return {*}
-     */
-    getRoleWriteAccess: function(role) {
-      return this._getAccess('write', Hitch.ACL.PUBLIC);
-    },
-
-    /**
-     * Sets the write access permission for a given role
-     * @param role
-     * @param allowed
-     */
-    setRoleWriteAccess: function(role, allowed) {
-      this._setAccess('write', role, allowed);
-    },
-
-    /**
-     * Returns a JSON representation of this ACL's permissions
-     * @return {*}
-     */
     toJSON: function() {
-      return _.clone(this.permissions);
+      return { public: this._publicPermissions, routes: this._routePermissions };
     }
-
   };
 
   /**
@@ -763,6 +551,20 @@
       }
 
       return returnVal(model.get(attr), value, operator);
+    },
+
+    load: function(options) {
+
+      var success;
+
+      options = options || {};
+      success = options.success;
+
+      options.success = _.bind(function() {
+        this.trigger('load', this);
+      }, this);
+
+      return this.fetch(options);
     }
 
   }));
@@ -1065,19 +867,6 @@
     // route filters
     _filters: {},
 
-    getCurrentUser: function(currentUser) {
-
-      if (!this.currentUser) {
-        if (currentUser instanceof Hitch.User) {
-          this.currentUser = currentUser;
-        } else {
-          this.currentUser = new Hitch.User();
-        }
-      }
-
-      return this.currentUser;
-    },
-
     /**
      * Adds an after filter
      * @param route
@@ -1119,11 +908,8 @@
 
         var args = this._extractParameters(route, fragment)
           , acl = this.getACL()
-          , canAccessRoute = acl.getAccess(name);
 
-        console.log(canAccessRoute, acl);
-        if (!canAccessRoute) return;
-
+        if (!acl.getAccess(name)) return;
         if (this._applyFilters('before', fragment, args)) {
 
           callback && callback.apply(this, args);
@@ -1391,56 +1177,6 @@
     },
 
     /**
-     * Returns the public interface for this application
-     * @return {*}
-     */
-    getPublicInterface: function() {
-      var publicInterfaceMethodNames = _.filter(_.keys(this), function(key) { return key.charAt(0) !== '_'; })
-      return _.pick(this, publicInterfaceMethodNames);
-    },
-
-    /**
-     * Returns the current session user
-     * @return {Hitch.User}
-     */
-    getCurrentUser: function() {
-
-      if (!this.currentUser) {
-
-        var cookie = Hitch.Cookies.get('hitch-user')
-          , self = this
-          , user;
-
-        if (cookie) {
-
-          user = new Hitch.User(cookie);
-          user.fetch({
-
-            success: function(data) {
-              user.set(data);
-              self.currentUser = user;
-            },
-
-            error: function() {
-              Hitch.Cookies.clear('hitch-user');
-              user = new Hitch.User({ role: { name: 'visitor' } });
-              Hitch.Cookies.set('hitch-user', user.id);
-            }
-
-          });
-
-        } else {
-          user = new Hitch.User({ role: { name: 'visitor' } });
-          Hitch.Cookies.set('hitch-user', user.id);
-        }
-
-        this.currentUser = user;
-      }
-
-      return this.currentUser;
-    },
-
-    /**
      * Appends an asset to the document head
      * @param type
      * @param source
@@ -1488,10 +1224,9 @@
             resource.url = [ this.apiUrl, resource.name ].join('/');
           }
 
-          resource.fetch({
+          resource.load({
             success: _.bind(function() {
               this.resources[resource.name] = resource;
-              resource.trigger('load', resource);
               if (++loaded === length) {
                 this.trigger('ready', this.resources);
               }
@@ -1522,7 +1257,7 @@
 
       if (this.exports) {
         var globalName = _.isString(this.exports) ? this.exports : this.name;
-        root[globalName] = this.getPublicInterface();
+        root[globalName] = this;
       }
     },
 

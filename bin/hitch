@@ -6,7 +6,7 @@
  *
  * @author: Philipp Boes <mostgreedy@gmail.com>
  * @copyright: (c) 2012 Philipp Boes
- * @version: 0.1.0-alpha
+ * @version: 0.1.0
  */
 
 var buildTarget = require('../lib/functions').buildTarget
