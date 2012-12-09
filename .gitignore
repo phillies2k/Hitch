@@ -1,4 +1,5 @@
 node_modules
+example
 .npmignore
 .idea
 CHANGES.md

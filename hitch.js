@@ -907,10 +907,7 @@
 
       Backbone.history.route(route, _.bind(function(fragment) {
 
-        var args = this._extractParameters(route, fragment)
-          , acl = this.getACL()
-
-        if (!acl.getAccess(name)) return;
+        var args = this._extractParameters(route, fragment);
         if (this._applyFilters('before', fragment, args)) {
 
           callback && callback.apply(this, args);
