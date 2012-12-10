@@ -1,0 +1,31 @@
+{"509a4f2f2f94ee66d7870344":{
+  "_id":{
+    "$id":"509a4f2f2f94ee66d7870344"
+  },
+  "username":"admin",
+  "password":"admin",
+  "email":"mail@example.com",
+  "role":{
+    "name":"Administrator"
+  }
+}, "509a4f2f2f94ee66d7870345":{
+  "_id":{
+    "$id":"509a4f2f2f94ee66d7870345"
+  },
+  "username":"mod1",
+  "password":"mod1",
+  "email":"mail1@host.com",
+  "role":{
+    "name":"Moderator"
+  }
+}, "509a4f2f2f94ee66d7870346":{
+  "_id":{
+    "$id":"509a4f2f2f94ee66d7870346"
+  },
+  "username":"mod2",
+  "password":"mod1",
+  "email":"mail2@host.com",
+  "role":{
+    "name":"Moderator"
+  }
+}}

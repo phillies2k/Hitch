@@ -1218,7 +1218,7 @@
             resource.name = _.uniqueId('r');
           }
 
-          if (this.apiUrl) {
+          if (!resource.url) {
             resource.url = [ this.apiUrl, resource.name ].join('/');
           }
 

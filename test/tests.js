@@ -65,21 +65,25 @@
   module('Hitch.Resource');
   asyncTest('Hitch.Resource', function() {
 
-    var R = Hitch.Resource.extend({ url: '/mstgrd.net/api/users', model: Hitch.User, parse: function(response) { return _.values(response); } });
+    var R = Hitch.Resource.extend({ url: 'mock.json', model: Hitch.User, parse: function(response) { return _.values(response); } });
     var r = new R();
 
-    r.fetch({
+    r.on('load', function(res) {
+      deepEqual(r.length, res.length, 'load callback is triggered properly');
+    });
+
+    r.load({
       success: function() {
 
         var d = r.findOne();
 
-        ok(d instanceof Hitch.User, 'find working for findOne');
+        ok(d instanceof Hitch.User, 'find one object');
 
         var u = r.find({
           username: 'admin'
         })[0];
 
-        deepEqual(u.get('username'), 'admin', 'find single deps attributes');
+        deepEqual(u.get('username'), 'admin', 'find plain object criteria');
 
         var n = r.find({
           role: {
@@ -183,6 +187,42 @@
     testCookie1.destroy();
     equal(Hitch.Cookies.get('cookieTest'), undefined, 'cookie was destroyed correctly');
 
+  });
+
+  var app;
+  module('Hitch.App', {
+    setup: function() {
+      app = new Hitch.App();
+    },
+    teardown: function() {
+      app = null;
+    }
+  });
+
+  test('setName', function() {
+
+    var name = 'testname'
+      , docTitle = document.title;
+
+    app.setName(name);
+
+    equal(app.name, name, 'name was set correctly');
+    equal(app.name, document.title, 'document.title was updated properly');
+    document.title = docTitle;
+
+  });
+
+  asyncTest('load', function() {
+
+    var UsersRepository = Hitch.Resource.extend({ url: 'mock.json', model: Hitch.User, parse: function(response) { return _.values(response); } })
+      , users = new UsersRepository();
+
+    app.on('ready', function() {
+      ok(true, 'ready event triggered');
+      start();
+    });
+
+    app.load(users);
   });
 
 
