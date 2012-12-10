@@ -6,8 +6,8 @@ Lightweight backbone-based single page application framework.
 * Default [Hitch.Object](#hitchobject)s for [users](#hitchuser), [credentials](#hitchcredentials) and [roles](#hitchrole)
 * Powerful [Access Control Layer](#hitchacl) for controlling access to [Hitch.Router](#hitchobject)s
 * Auto-generate your hitch applications using the command-line tool
-* Provides a npm package.json like config for building your application and to keep it up-to-date.
-* Module based app structure based on the amd module pattern
+* Provides a npm package.json like configuration file for building your application and to keep it up-to-date.
+* Modularized app structure based on the amd module pattern
 * Reduces glue code to a minimum
 * Generic view data binding using HTML data-attributes
 * Preloaded resources
@@ -73,8 +73,8 @@ Point your browser to your application and have a look at your freshly created h
 
 ## Configuration
 
-Configuration means to modify your 'hitch.json' file which was created by either yourself or the command line tool when
-you created your application. The hitch.json is divided into several sections which specifies the application structure
+Configuration means to modify your 'app.js' file which was created by either yourself or the command line tool when
+you created your application. The app.js is divided into several sections which specifies the application structure
 and environment.
 
 ##### Configuration Options
@@ -88,6 +88,7 @@ and environment.
 * `resources` - resource definitions
 * `modules` - module definitions
 * `assets`- your application styles and media
+* `deployment`- deployment configuration
 
 ##### Configuring resources
 
@@ -95,8 +96,8 @@ A resource can be configured as simple as `"myresource": "true"`. This resource 
 ```javascript
 {
   ...
-  "resources": {
-    "users": "true"
+  resources: {
+    users: "true"
   }
 }
 ```
@@ -108,10 +109,10 @@ stylesheets.
 ```javascript
 {
   ...
-  "assets": [
+  assets: [
     {
-      "type": "scss",
-      "path": "scss/layout/common"
+      type: "scss",
+      path: "scss/layout/common"
     }
   ]
 }
@@ -119,17 +120,18 @@ stylesheets.
 
 ##### Configuring modules
 
-A module can have an `acl` property for configuring access to this module (e.g. access to the routes). Furthermore a 
-special property named "resource" is available to define a resource this module manages
+A module can have a `permissions` property for configuring access to this module (e.g. access to the routes). Furthermore
+a special property named "resource" is available to define a resource this module manages.
 ```javascript
 {
   ...
-  "modules": {
-    "users": {
-      "resource": "users",
-      "acl": {
-        "role:user": "r",
-        "role:admin": "rw"
+  modules: {
+    users: {
+      resource: "users",
+      permissions: {
+        edit: {
+          ...
+        }
       }
     }
   }
@@ -152,8 +154,8 @@ your target can either be the path of the hitch application you want to create o
 * `resource` - will create a new resource
 * `module` - will create a module
 
-Its recommended that you use the `create [resource|module] [name]` commands with care because hitch.json will not be
-updated when creating targets manually. You have to extend the hitch.json file by yourself.
+Its recommended that you use the `create [resource|module] [name]` commands with care because app.js will not be
+updated when creating targets manually. You have to extend the app.js file by yourself.
 
 
 ##### The `build` command
@@ -176,7 +178,7 @@ your build target can either be empty ( will execute all building tasks ) or one
 hitch deploy
 ```
 
-This command tries to deploy your project to the deployment configuration found in your hitch.json. It will create a 
+This command tries to deploy your project to the deployment configuration found in your app.js. It will create a
 build/ folder in your application root and will deploy your compiled application to a new sub folder `build/$version$/`. 
 It will also create `build/config.js` which holds the requirejs r.js build configuration to combine/uglify your 
 applications code. It will also deploy your assets by using an appropriate compiler to compile LESS and SASS stylesheets.
