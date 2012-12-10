@@ -16,6 +16,7 @@ Lightweight backbone-based single page application framework.
 
 ## Table of Contents:
 
+* [Requirements](#requirements)
 * [Installation](#installation)
 * [Setup](#setup)
 * [Configuration](#configuration)
@@ -34,6 +35,12 @@ Lightweight backbone-based single page application framework.
   * [Hitch.Router](#hitchrouter)
   * [Hitch.User](#hitchuser)
   * [Hitch.View](#hitchview)
+
+## Requirements
+
+In general all necessary dependencies come with the installation of the node package. If you want Hitch to take care
+about the asset management you have to install `lessc` and/or `scss` to enable Hitch to use these for compiling your
+assets. Both tools are available as aptitude package so `sudo apt-get install lessc scss` will fit all your needs.
 
 ## Installation
 
