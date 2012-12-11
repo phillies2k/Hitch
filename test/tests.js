@@ -199,6 +199,9 @@
     }
   });
 
+  /**
+   * @covers Hitch.App.prototype.setName
+   */
   test('setName', function() {
 
     var name = 'testname'
@@ -212,13 +215,32 @@
 
   });
 
-  asyncTest('load', function() {
+  /**
+   * @covers Hitch.App.prototype.load
+   */
+  asyncTest('load triggers ready event', function() {
 
     var UsersRepository = Hitch.Resource.extend({ url: 'mock.json', model: Hitch.User, parse: function(response) { return _.values(response); } })
       , users = new UsersRepository();
 
     app.on('ready', function() {
       ok(true, 'ready event triggered');
+      start();
+    });
+
+    app.load(users);
+  });
+
+  /**
+   * @covers Hitch.App.prototype.load
+   */
+  asyncTest('loading resources', function() {
+
+    var UsersRepository = Hitch.Resource.extend({ url: 'mock.json', name: 'users', model: Hitch.User, parse: function(response) { return _.values(response); } })
+      , users = new UsersRepository({ load: true });
+
+    app.on('ready', function(resources) {
+      deepEqual(resources.users, users, 'resource were loaded');
       start();
     });
 

@@ -1,5 +1,6 @@
-Hitch v0.1.1
+Hitch v0.1.2
 ==================
+@see: [CHANGES](Hitch/tree/master/CHANGES.md)
 
 Lightweight backbone-based single page application framework.
 

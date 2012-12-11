@@ -1,10 +1,10 @@
 /**
- * Hitch.js - v0.1.1
+ * Hitch.js - v0.1.2
  * Lightweight backbone based single page application framework
  *
  * @author: Philipp Boes <mostgreedy@gmail.com>
  * @copyright: (c) 2012 Philipp Boes
- * @version: 0.1.1
+ * @version: 0.1.2
  *
  */
 (function() {
@@ -24,7 +24,7 @@
   extend = Backbone.Router.extend;
 
   // keep in sync with package.json
-  Hitch.VERSION = '0.1.1';
+  Hitch.VERSION = '0.1.2';
 
   /**
    * Hitch.Access Mixin
@@ -1194,25 +1194,63 @@
     },
 
     /**
+     * redirects to another location
+     * @param module
+     * @param action
+     * @param params
+     */
+    redirect: function(module, action, params) {
+
+      var modulePropertyName = _.lcFirst(module) + 'Router'
+        , routes;
+
+      params = params || {};
+
+      if (!this[modulePropertyName]) {
+        throw new Error("no module found with that name: " + module);
+      }
+
+      routes = this[modulePropertyName].routes;
+
+      _.each(routes, function(actionName, route) {
+        if (action === actionName) {
+
+          _.each(params, function(value, key) {
+            route = route.replace(new RegExp(':' + key, 'g'), function(m) {
+              return value;
+            });
+          });
+
+          this.navigate(route, true);
+        }
+      }, this);
+    },
+
+    /**
      * Loads all resources and fires a ready event when all resources are in sync with the server.
      * @param resources
      */
     load: function(resources) {
 
       var length
-        , loaded = 0;
+        , loaded = 0
+        , queue = [];
 
       if (!_.isArray(resources)) {
         resources = _.toArray(arguments);
       }
 
-      length = resources.length;
+      queue = _.filter(resources, function(resource) {
+        return resource._autoLoad === true;
+      });
+
+      length = queue.length;
       this.resources = {};
 
       if (!length) {
         this.trigger('ready', this.resources);
       } else {
-        _.each(resources, function(resource) {
+        _.each(queue, function(resource) {
 
           if (_.isFunction(resource)) {
             resource = new resource();
@@ -1266,18 +1304,30 @@
       }
     },
 
+    /**
+     * called on router initialization
+     */
     initialize: function() {
       // overwrite in subclasses
     },
 
+    /**
+     * called on ready event
+     */
     ready: function() {
       // overwrite in subclasses
     },
 
+    /**
+     * default home route callback
+     */
     index: function() {
       // overwrite in subclasses (default home route)
     },
 
+    /**
+     * default error route callback
+     */
     error: function() {
       // overwrite in subclasses (default error route)
     }
