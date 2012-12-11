@@ -1221,9 +1221,9 @@
             });
           });
 
-          this.navigate(route, true);
+          Backbone.history.navigate(route, true);
         }
-      }, this);
+      });
     },
 
     /**
