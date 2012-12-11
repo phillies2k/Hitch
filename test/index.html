@@ -10,36 +10,8 @@
   <script src="vendor/qunit.js"></script>
   <script src="../hitch.js"></script>
   <script src="tests.js"></script>
-  <script>
-    $(function() {
-
-      function countFunctions(obj) {
-        var count = 0;
-
-        _.each(obj, function(prop, name) {
-          if (!_.isFunction(prop) && _.isObject(prop)) {
-            count += countFunctions(prop);
-          } else if (_.isFunction(prop)) {
-            count += _.functions(prop.prototype).length;
-          }
-        });
-
-        return count;
-      }
-
-      var coverage = 28
-        , shouldBeCovered = countFunctions(Hitch) - countFunctions(Backbone)
-        , percentage = Math.round(coverage/shouldBeCovered*10000)/100
-        , headline = coverage + ' of ' + shouldBeCovered + ' (' + percentage + '%)';
-
-      $('#coverage').html(headline);
-
-    });
-  </script>
 </head>
 <body>
-
-<h2>Current Coverage: <span id="coverage"></span></h2>
 
 <div id="qunit"></div>
 

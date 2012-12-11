@@ -1,10 +1,10 @@
 /**
- * Hitch.js - v0.1.0
+ * Hitch.js - v0.1.1
  * Lightweight backbone based single page application framework
  *
  * @author: Philipp Boes <mostgreedy@gmail.com>
  * @copyright: (c) 2012 Philipp Boes
- * @version: 0.1.0
+ * @version: 0.1.1
  *
  */
 (function() {
@@ -24,7 +24,7 @@
   extend = Backbone.Router.extend;
 
   // keep in sync with package.json
-  Hitch.VERSION = '0.1.0';
+  Hitch.VERSION = '0.1.1';
 
   /**
    * Hitch.Access Mixin
@@ -471,6 +471,10 @@
 
     // base model
     model: Hitch.Object,
+
+    initialize: function(options) {
+      this._autoLoad = options && options.load;
+    },
 
     /**
      * Finds models matching the given criteria
@@ -1222,14 +1226,17 @@
             resource.url = [ this.apiUrl, resource.name ].join('/');
           }
 
-          resource.load({
-            success: _.bind(function() {
-              this.resources[resource.name] = resource;
-              if (++loaded === length) {
-                this.trigger('ready', this.resources);
-              }
-            }, this)
-          });
+          if (resource._autoLoad) {
+            resource.load({
+              success: _.bind(function() {
+                if (++loaded === length) {
+                  this.trigger('ready', this.resources);
+                }
+              }, this)
+            });
+          }
+
+          this.resources[resource.name] = resource;
 
         }, this);
       }
